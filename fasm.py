@@ -259,6 +259,8 @@ def fasm_line_to_string(fasm_line, canonical=False):
                     feature,
                     check_if_canonical=True)
 
+        return
+
     parts = []
 
     if fasm_line.set_feature:
