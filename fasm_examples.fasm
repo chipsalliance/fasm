@@ -1,0 +1,47 @@
+# This file should have examples of all FASM lines that should parse.
+# If an example is missing, add it to the end with a comment when is being
+# demostrated.
+#
+# Blank  line
+
+# Empty comment
+#
+   #    
+
+# Set a single feature bit to 1
+# Implicit 1
+INT_L_X10Y146.SW6BEG0.WW2END0
+  CLBLL_L_X12Y124.SLICEL_X0.BLUT.INIT[17]
+# Explicit 1
+INT_L_X10Y146.SW6BEG0.WW2END0 = 1
+CLBLL_L_X12Y124.SLICEL_X0.BLUT.INIT[17] = 1
+# Explicit bit range
+INT_L_X10Y146.SW6BEG0.WW2END0[0:0] = 1'b1
+CLBLL_L_X12Y124.SLICEL_X0.BLUT.INIT[17:17] = 1'b1
+
+# Set a single feature bit to 0
+# Explicit 0
+INT_L_X10Y146.SW6BEG0.WW2END0 = 0
+CLBLL_L_X12Y124.SLICEL_X0.BLUT.INIT[17] = 0
+# Explicit bit range to 0
+INT_L_X10Y146.SW6BEG0.WW2END0[0:0] = 1'b0
+CLBLL_L_X12Y124.SLICEL_X0.BLUT.INIT[17:17] = 1'b0
+
+# Set a bitarray
+CLBLL_R_X13Y132.SLICEL_X0.ALUT.INIT[63:32] = 32'b11110000_11110000_11110000_11110000
+CLBLL_R_X13Y132.SLICEL_X0.ALUT.INIT[63:32] = 32'b11110000_11110000_11110000_11110000
+CLBLL_R_X13Y132.SLICEL_X0.ALUT.INIT[63:32] = 5'h1F
+CLBLL_R_X13Y132.SLICEL_X0.ALUT.INIT[63:32] = 32'o1234567
+
+# Annotation on a FASM feature
+ INT_L_X10Y146.SW6BEG0.WW2END0 { .attr = "" }
+INT_L_X10Y146.SW6BEG0.WW2END0 { .filename = "/a/b/c.txt" }
+  INT_L_X10Y146.SW6BEG0.WW2END0 { module = "top", file = "/a/b/d.txt", line_number =   "123" }
+ INT_L_X10Y146.SW6BEG0.WW2END0{module="top",file="/a/b/d.txt",line_number="123"}
+
+# Annotation by itself
+{ .top_module = "/a/b/c/d.txt" }
+
+# Annotation with FASM feature and comment
+INT_L_X10Y146.SW6BEG0.WW2END0 { .top_module = "/a/b/c/d.txt" } # This is a comment
+# Comment on the last line!

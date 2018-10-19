@@ -1,0 +1,31 @@
+// FasmFile must be first, it is the root of the parse tree.
+FasmFile: (lines*=FasmLine Newline*)* ;
+
+// None-newline whitespace
+S: /[ \t]/ ;
+
+Newline: /[\n\r]/ ;
+
+Identifier: /[a-zA-Z][0-9a-zA-Z_]*/ ;
+Feature: Identifier ( '.' Identifier )* ;
+
+DecimalValue: /[0-9_]+/ ;
+HexidecimalValue: /[0-9a-fA-F_]+/ ;
+OctalValue: /[0-7_]+/ ;
+BinaryValue: /[01_]+/ ;
+
+VerilogValue: ( width=INT? S* "'" ( 'h' S* hex_value=HexidecimalValue | 'b' S* binary_value=BinaryValue | 'd' S*  decimal_value=DecimalValue | 'o' S* octal_value=OctalValue ) | plain_decimal=DecimalValue ) ;
+
+FeatureAddress: '[' address1=DecimalValue (':' address2=DecimalValue)? ']' ;
+
+CommentCap: '#' comment=/[^\n\r]*/ ;
+
+AnnotationName: /[.a-zA-Z][0-9a-zA-Z_]*/ ;
+NonEscapeCharacters: /[^\"]/ ;
+EscapeSequences: /[\\][\\"]/  ;
+AnnotationValue: (NonEscapeCharacters | EscapeSequences)* ;
+Annotation: name=AnnotationName S* '=' S* '"' value=AnnotationValue '"' ;
+Annotations: '{' S* annotations+=Annotation ( ',' S* annotations+=Annotation )* S* '}' ;
+
+SetFasmFeature: feature=Feature feature_address=FeatureAddress? S* ('=' S* feature_value=VerilogValue)? ;
+FasmLine: S* set_feature=SetFasmFeature? S* annotations=Annotations? S* comment=CommentCap?;
