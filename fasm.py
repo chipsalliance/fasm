@@ -107,11 +107,9 @@ def get_fasm_metamodel():
 
 def fasm_model_to_tuple(fasm_model):
     """ Converts FasmFile model to list of FasmLine named tuples. """
-
     if not fasm_model:
-        return []
+        return
 
-    fasm_lines = []
     for fasm_line in fasm_model.lines:
         set_feature = None
         annotations = None
@@ -127,13 +125,11 @@ def fasm_model_to_tuple(fasm_model):
         if fasm_line.comment:
             comment = fasm_line.comment.comment
 
-        fasm_lines.append(FasmLine(
+        yield FasmLine(
             set_feature=set_feature,
             annotations=annotations,
             comment=comment,
-            ))
-
-    return fasm_lines
+            )
 
 
 def parse_fasm_string(s):
@@ -255,6 +251,38 @@ def canonical_features(set_feature):
                         value_format=None,
                         )
 
+def fasm_line_to_string(fasm_line, canonical=False):
+    if canonical:
+        if fasm_line.set_feature:
+            for feature in canonical_features(fasm_line.set_feature):
+                yield set_feature_to_str(
+                    feature,
+                    check_if_canonical=True)
+
+    parts = []
+
+    if fasm_line.set_feature:
+        parts.append(set_feature_to_str(fasm_line.set_feature))
+
+    if fasm_line.annotations and not canonical:
+        annotations = '{{ {} }}'.format(', '.join('{} = "{}"'.format(
+            annotation.name, annotation.value)
+                for annotation in fasm_line.annotations
+                ))
+
+        parts.append(annotations)
+
+    if fasm_line.comment is not None and not canonical:
+        comment = '#{}'.format(fasm_line.comment)
+        parts.append(comment)
+
+    if len(parts) == 0 and canonical:
+        return
+
+    yield ' '.join(parts)
+
+
+
 def fasm_tuple_to_string(model, canonical=False):
     """ Returns string of FASM file for the model given.
 
@@ -264,36 +292,8 @@ def fasm_tuple_to_string(model, canonical=False):
 
     lines = []
     for fasm_line in model:
-        if canonical:
-            if fasm_line.set_feature:
-                for feature in canonical_features(fasm_line.set_feature):
-                    lines.append(set_feature_to_str(
-                        feature,
-                        check_if_canonical=True))
-
-            continue
-
-        parts = []
-
-        if fasm_line.set_feature:
-            parts.append(set_feature_to_str(fasm_line.set_feature))
-
-        if fasm_line.annotations and not canonical:
-            annotations = '{{ {} }}'.format(', '.join('{} = "{}"'.format(
-                annotation.name, annotation.value)
-                    for annotation in fasm_line.annotations
-                    ))
-
-            parts.append(annotations)
-
-        if fasm_line.comment is not None and not canonical:
-            comment = '#{}'.format(fasm_line.comment)
-            parts.append(comment)
-
-        if len(parts) == 0 and canonical:
-            continue
-
-        lines.append(' '.join(parts))
+        for line in fasm_line_to_string(fasm_line, canonical=canonical):
+            lines.append(line)
 
     if canonical:
         lines = list(sorted(set(lines)))
