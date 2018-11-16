@@ -174,6 +174,8 @@ def set_feature_to_str(set_feature, check_if_canonical=False):
     if check_if_canonical:
         assert feature_width == 1
         assert set_feature.end is None
+        if set_feature.start is not None:
+            assert set_feature.start != 0
         assert set_feature.value_format is None
 
     feature = set_feature.feature
@@ -217,13 +219,22 @@ def canonical_features(set_feature):
     if set_feature.start is not None and set_feature.end is None:
         assert set_feature.value == 1
 
-        yield SetFasmFeature(
-                feature=set_feature.feature,
-                start=set_feature.start,
-                end=None,
-                value=1,
-                value_format=None,
-                )
+        if set_feature.start == 0:
+            yield SetFasmFeature(
+                    feature=set_feature.feature,
+                    start=None,
+                    end=None,
+                    value=1,
+                    value_format=None,
+                    )
+        else:
+            yield SetFasmFeature(
+                    feature=set_feature.feature,
+                    start=set_feature.start,
+                    end=None,
+                    value=1,
+                    value_format=None,
+                    )
 
         return
 
