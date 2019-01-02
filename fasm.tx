@@ -6,7 +6,7 @@ S: /[ \t]/ ;
 
 Newline: /[\n\r]/ ;
 
-Identifier: /[a-zA-Z][0-9a-zA-Z_]*/ ;
+Identifier: /[0-9a-zA-Z_]*/ ;
 Feature: Identifier ( '.' Identifier )* ;
 
 DecimalValue: /[0-9_]+/ ;
