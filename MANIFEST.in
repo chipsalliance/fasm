@@ -8,3 +8,4 @@ include *.yapf
 
 recursive-include examples *.fasm
 recursive-include docs *.rst
+recursive-include docs *.png

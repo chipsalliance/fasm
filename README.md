@@ -12,6 +12,8 @@ text file format for configuring the internals of an FPGA.
 It is designed to allow FPGA place and route to not care about the *actual*
 bitstream format used on an FPGA.
 
+![FASM Ecosystem Diagram](docs/fasm-diagram.png)
+
 ### Properties
 
  * Removing a line from a FASM file leaves you with a valid FASM file.
