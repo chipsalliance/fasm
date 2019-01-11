@@ -1,5 +1,13 @@
+#!/usr/bin/env python3
+import os
+import os.path
+
 import unittest
 import fasm
+
+
+def example(fname):
+    return os.path.join(os.path.dirname(__file__), '..', 'examples', fname)
 
 
 def check_round_trip(test, result):
@@ -9,13 +17,13 @@ def check_round_trip(test, result):
 
 class TestFasm(unittest.TestCase):
     def test_blank_file(self):
-        result = list(fasm.parse_fasm_filename('fasm_blank.fasm'))
+        result = list(fasm.parse_fasm_filename(example('blank.fasm')))
         self.assertEqual(result, [])
 
         check_round_trip(self, result)
 
     def test_comment_file(self):
-        result = list(fasm.parse_fasm_filename('fasm_comment.fasm'))
+        result = list(fasm.parse_fasm_filename(example('comment.fasm')))
         self.assertEqual(
             result, [
                 fasm.FasmLine(
@@ -28,7 +36,7 @@ class TestFasm(unittest.TestCase):
         check_round_trip(self, result)
 
     def test_one_line_feature(self):
-        result = list(fasm.parse_fasm_filename('fasm_feature_only.fasm'))
+        result = list(fasm.parse_fasm_filename(example('feature_only.fasm')))
         self.assertEqual(
             result, [
                 fasm.FasmLine(
@@ -49,7 +57,7 @@ class TestFasm(unittest.TestCase):
         check_round_trip(self, result)
 
     def test_examples_file(self):
-        result = list(fasm.parse_fasm_filename('fasm_examples.fasm'))
+        result = list(fasm.parse_fasm_filename(example('many.fasm')))
         check_round_trip(self, result)
 
 
