@@ -5,6 +5,7 @@ import argparse
 from collections import namedtuple
 import enum
 
+
 class ValueFormat(enum.Enum):
     PLAIN = 0
     VERILOG_DECIMAL = 1
@@ -12,16 +13,19 @@ class ValueFormat(enum.Enum):
     VERILOG_BINARY = 3
     VERILOG_OCTAL = 4
 
+
 # Python version of a SetFasmFeature line.
 # feature is a string
-# start and end are ints.  When FeatureAddress is missing, start=None and end=None.
+# start and end are ints.  When FeatureAddress is missing, start=None and
+# end=None.
 # value is an int.
 #
 # When FeatureValue is missing, value=1.
 # value_format determines what to output the value.
 # Should be a ValueFormat or None.
 # If None, value must be 1 and the value will be omited.
-SetFasmFeature = namedtuple('SetFasmFeature', 'feature start end value value_format')
+SetFasmFeature = namedtuple(
+    'SetFasmFeature', 'feature start end value value_format')
 
 Annotation = namedtuple('Annotation', 'name value')
 
@@ -31,9 +35,11 @@ Annotation = namedtuple('Annotation', 'name value')
 # comment should a string or None.
 FasmLine = namedtuple('FasmLine', 'set_feature annotations comment')
 
+
 def assert_max_width(width, value):
-    """ Given a width and integer value, asserts if the value is greater than the width. """
-    assert value < (2 ** width), (width, value)
+    """ asserts if the value is greater than the width. """
+    assert value < (2**width), (width, value)
+
 
 def verilog_value_to_int(verilog_value):
     """ Convert VerilogValue model to width, value, value_format """
@@ -65,6 +71,7 @@ def verilog_value_to_int(verilog_value):
 
     return width, value, value_format
 
+
 def set_feature_model_to_tuple(set_feature_model):
     start = None
     end = None
@@ -83,27 +90,28 @@ def set_feature_model_to_tuple(set_feature_model):
             address_width = 1
 
     if set_feature_model.feature_value:
-        width, value, value_format = verilog_value_to_int(set_feature_model.feature_value)
+        width, value, value_format = verilog_value_to_int(
+            set_feature_model.feature_value)
 
         if width is not None:
             assert width <= address_width
 
-        assert value < (2 ** address_width), (value, address_width)
-
+        assert value < (2**address_width), (value, address_width)
 
     return SetFasmFeature(
-            feature=set_feature_model.feature,
-            start=start,
-            end=end,
-            value=value,
-            value_format=value_format,
-            )
+        feature=set_feature_model.feature,
+        start=start,
+        end=end,
+        value=value,
+        value_format=value_format,
+    )
+
 
 def get_fasm_metamodel():
     return textx.metamodel_from_file(
-            file_name=os.path.join(os.path.dirname(__file__), 'fasm.tx'),
-            skipws=False
-            )
+        file_name=os.path.join(os.path.dirname(__file__), 'fasm.tx'),
+        skipws=False)
+
 
 def fasm_model_to_tuple(fasm_model):
     """ Converts FasmFile model to list of FasmLine named tuples. """
@@ -119,8 +127,11 @@ def fasm_model_to_tuple(fasm_model):
             set_feature = set_feature_model_to_tuple(fasm_line.set_feature)
 
         if fasm_line.annotations:
-            annotations = tuple(Annotation(name=annotation.name, value=annotation.value if annotation.value else '')
-                    for annotation in fasm_line.annotations.annotations)
+            annotations = tuple(
+                Annotation(
+                    name=annotation.name,
+                    value=annotation.value if annotation.value else '')
+                for annotation in fasm_line.annotations.annotations)
 
         if fasm_line.comment:
             comment = fasm_line.comment.comment
@@ -129,16 +140,18 @@ def fasm_model_to_tuple(fasm_model):
             set_feature=set_feature,
             annotations=annotations,
             comment=comment,
-            )
+        )
 
 
 def parse_fasm_string(s):
     """ Parse FASM string, returning list of FasmLine named tuples."""
     return fasm_model_to_tuple(get_fasm_metamodel().model_from_str(s))
 
+
 def parse_fasm_filename(filename):
     """ Parse FASM file, returning list of FasmLine named tuples."""
     return fasm_model_to_tuple(get_fasm_metamodel().model_from_file(filename))
+
 
 def fasm_value_to_str(value, width, value_format):
     """ Convert value from SetFasmFeature to a string. """
@@ -155,6 +168,7 @@ def fasm_value_to_str(value, width, value_format):
     else:
         assert False, value_format
 
+
 def set_feature_width(set_feature):
     if set_feature.end is None:
         return 1
@@ -165,10 +179,11 @@ def set_feature_width(set_feature):
 
         return set_feature.end - set_feature.start + 1
 
+
 def set_feature_to_str(set_feature, check_if_canonical=False):
     """ Convert SetFasmFeature tuple to string. """
     feature_width = set_feature_width(set_feature)
-    max_feature_value = 2 ** feature_width
+    max_feature_value = 2**feature_width
     assert set_feature.value < max_feature_value
 
     if check_if_canonical:
@@ -190,16 +205,19 @@ def set_feature_to_str(set_feature, check_if_canonical=False):
 
     if set_feature.value_format is not None:
         feature_value = ' = {}'.format(
-                fasm_value_to_str(
-                    value=set_feature.value,
-                    width=feature_width,
-                    value_format=set_feature.value_format
-                    ))
+            fasm_value_to_str(
+                value=set_feature.value,
+                width=feature_width,
+                value_format=set_feature.value_format))
 
     return '{}{}{}'.format(feature, address, feature_value)
 
+
 def canonical_features(set_feature):
-    """ Yield SetFasmFeature tuples that are of canonical form (e.g. width 1, and value 1). """
+    """ Yield SetFasmFeature tuples that are of canonical form.
+
+    EG width 1, and value 1.
+    """
     if set_feature.value == 0:
         return
 
@@ -207,12 +225,12 @@ def canonical_features(set_feature):
         assert set_feature.value == 1
         assert set_feature.end is None
         yield SetFasmFeature(
-                feature=set_feature.feature,
-                start=None,
-                end=None,
-                value=1,
-                value_format=None,
-                )
+            feature=set_feature.feature,
+            start=None,
+            end=None,
+            value=1,
+            value_format=None,
+        )
 
         return
 
@@ -221,20 +239,20 @@ def canonical_features(set_feature):
 
         if set_feature.start == 0:
             yield SetFasmFeature(
-                    feature=set_feature.feature,
-                    start=None,
-                    end=None,
-                    value=1,
-                    value_format=None,
-                    )
+                feature=set_feature.feature,
+                start=None,
+                end=None,
+                value=1,
+                value_format=None,
+            )
         else:
             yield SetFasmFeature(
-                    feature=set_feature.feature,
-                    start=set_feature.start,
-                    end=None,
-                    value=1,
-                    value_format=None,
-                    )
+                feature=set_feature.feature,
+                start=set_feature.start,
+                end=None,
+                value=1,
+                value_format=None,
+            )
 
         return
 
@@ -242,33 +260,32 @@ def canonical_features(set_feature):
     assert set_feature.start >= 0
     assert set_feature.end >= set_feature.start
 
-    for address in range(set_feature.start, set_feature.end+1):
+    for address in range(set_feature.start, set_feature.end + 1):
         value = (set_feature.value >> (address - set_feature.start)) & 1
         if value:
             if address == 0:
                 yield SetFasmFeature(
-                        feature=set_feature.feature,
-                        start=None,
-                        end=None,
-                        value=1,
-                        value_format=None,
-                        )
+                    feature=set_feature.feature,
+                    start=None,
+                    end=None,
+                    value=1,
+                    value_format=None,
+                )
             else:
                 yield SetFasmFeature(
-                        feature=set_feature.feature,
-                        start=address,
-                        end=None,
-                        value=1,
-                        value_format=None,
-                        )
+                    feature=set_feature.feature,
+                    start=address,
+                    end=None,
+                    value=1,
+                    value_format=None,
+                )
+
 
 def fasm_line_to_string(fasm_line, canonical=False):
     if canonical:
         if fasm_line.set_feature:
             for feature in canonical_features(fasm_line.set_feature):
-                yield set_feature_to_str(
-                    feature,
-                    check_if_canonical=True)
+                yield set_feature_to_str(feature, check_if_canonical=True)
 
         return
 
@@ -278,10 +295,10 @@ def fasm_line_to_string(fasm_line, canonical=False):
         parts.append(set_feature_to_str(fasm_line.set_feature))
 
     if fasm_line.annotations and not canonical:
-        annotations = '{{ {} }}'.format(', '.join('{} = "{}"'.format(
-            annotation.name, annotation.value)
-                for annotation in fasm_line.annotations
-                ))
+        annotations = '{{ {} }}'.format(
+            ', '.join(
+                '{} = "{}"'.format(annotation.name, annotation.value)
+                for annotation in fasm_line.annotations))
 
         parts.append(annotations)
 
@@ -293,7 +310,6 @@ def fasm_line_to_string(fasm_line, canonical=False):
         return
 
     yield ' '.join(parts)
-
 
 
 def fasm_tuple_to_string(model, canonical=False):
@@ -313,16 +329,21 @@ def fasm_tuple_to_string(model, canonical=False):
 
     return '\n'.join(lines) + '\n'
 
+
 def main():
     parser = argparse.ArgumentParser('FASM tool')
     parser.add_argument('file', help='Filename to process')
-    parser.add_argument('--canonical', action='store_true', help='Return canonical form of FASM.')
+    parser.add_argument(
+        '--canonical',
+        action='store_true',
+        help='Return canonical form of FASM.')
 
     args = parser.parse_args()
 
     fasm_tuples = parse_fasm_filename(args.file)
 
     print(fasm_tuple_to_string(fasm_tuples, args.canonical))
+
 
 if __name__ == '__main__':
     main()

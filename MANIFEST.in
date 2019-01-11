@@ -1,0 +1,9 @@
+# Include the README
+include *.md
+
+# Include the license file
+include COPYING
+
+include *.yapf
+
+recursive-include examples *.fasm
