@@ -1,3 +1,9 @@
+""" Output utilities for FASM.
+
+merge_features - Combines multiple FASM SetFasmFeature into one.
+merge_and_sort - Groups and sorts FASM lines, useful for non-canonical output.
+
+"""
 import enum
 from fasm import SetFasmFeature, FasmLine, ValueFormat
 
@@ -18,7 +24,7 @@ def is_blank_line(line):
 
 
 def merge_features(features):
-    """ Combines features with varying addresses but same feature into one feature.
+    """ Combines features with varying addresses but same feature.
 
     A[0] = 1
     A[1] = 1
@@ -90,13 +96,16 @@ class MergeModel(object):
      - Consecutive annotations will be grouped.
      - Empty lines will be discarded
      - Features will be grouped by their first feature part.
-     - Features within the same feature with different addresses will be merged.
+     - Features within the same feature with different addresses will be
+       merged.
 
-    If a feature has a comment in its group, it is not eligable for address merging.
+    If a feature has a comment in its group, it is not eligable for address
+    merging.
 
     """
 
     class State(enum.Enum):
+        """ State of grouper. """
         NoGroup = 1
         InCommentGroup = 2
         InAnnotationGroup = 3
@@ -107,6 +116,12 @@ class MergeModel(object):
         self.current_group = None
 
     def start_comment_group(self, line):
+        """ Start a new group of comments.
+
+        Requires that input line is a comment and not already in a comment
+        group.
+
+        """
         assert self.state != MergeModel.State.InCommentGroup
         assert is_only_comment(line)
 
@@ -158,6 +173,13 @@ class MergeModel(object):
             self.add_to_model(line)
 
     def add_to_model(self, line):
+        """ Add a line to the MergeModel.
+
+        Will be grouped per MergeModel rules.
+        This method is stateful, so order of insert matters, per grouping
+        rules.
+
+        """
         if self.state == MergeModel.State.NoGroup:
             if is_only_comment(line):
                 self.start_comment_group(line)
@@ -177,6 +199,10 @@ class MergeModel(object):
             assert False
 
     def merge_addresses(self):
+        """ Merges address features when possible.
+
+        Call after all lines have been added to the model.
+        """
         for group in self.groups:
             for line in group:
                 assert not is_blank_line(line)
@@ -244,6 +270,16 @@ class MergeModel(object):
                             ])
 
     def output_sorted_lines(self, zero_function=None, sort_key=None):
+        """ Yields sorted FasmLine's.
+
+        zero_function - Function that takes a feature string, and returns true
+                        that feature has no bits set.  This allows tiles with
+                        only zero features to be dropped.
+
+        sort_key -      Function that takes a string argument and returns a key
+                        for the first feature part. Example:
+
+        """
         feature_groups = {}
         non_feature_groups = []
 
@@ -321,13 +357,16 @@ def merge_and_sort(model, zero_function=None, sort_key=None):
 
         with if the key function returns (A, 2, 1) for A_X2Y1.
 
+    Yields FasmLine's.
+
     Grouping logic:
      - Consecutive comments will be grouped.
      - Comments groups will attach to the next non-comment entry.
      - Consecutive annotations will be grouped.
      - Empty lines will be discarded
      - Features will be grouped by their first feature part.
-     - Features within the same feature with different addresses will be merged.
+     - Features within the same feature with different addresses will be
+    merged.
 
     Sorting logic:
      - Features will appear before raw annotations.
