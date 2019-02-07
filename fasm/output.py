@@ -1,17 +1,21 @@
 import enum
 from fasm import SetFasmFeature, FasmLine, ValueFormat
 
+
 def is_only_comment(line):
     """ Returns True if line is only a comment. """
     return not line.set_feature and not line.annotations and line.comment
+
 
 def is_only_annotation(line):
     """ Returns True if line is only an annotations. """
     return not line.set_feature and line.annotations and not line.comment
 
+
 def is_blank_line(line):
     """ Returns True if line is blank. """
     return not line.set_feature and not line.annotations and not line.comment
+
 
 def merge_features(features):
     """ Combines features with varying addresses but same feature into one feature.
@@ -54,7 +58,7 @@ def merge_features(features):
         if feature.value is not None:
             value = feature.value
 
-        for bit in range(start, end+1):
+        for bit in range(start, end + 1):
             bit_is_set = ((value >> (bit - start)) & 1) != 0
             if bit_is_set:
                 assert bit not in cleared_bits
@@ -70,11 +74,12 @@ def merge_features(features):
         final_value |= (1 << bit)
 
     return SetFasmFeature(
-            feature=features[0].feature,
-            start=0,
-            end=max_bit,
-            value=final_value,
-            value_format=ValueFormat.VERILOG_BINARY)
+        feature=features[0].feature,
+        start=0,
+        end=max_bit,
+        value=final_value,
+        value_format=ValueFormat.VERILOG_BINARY)
+
 
 class MergeModel(object):
     """ Groups and merges features.
@@ -90,6 +95,7 @@ class MergeModel(object):
     If a feature has a comment in its group, it is not eligable for address merging.
 
     """
+
     class State(enum.Enum):
         NoGroup = 1
         InCommentGroup = 2
@@ -211,13 +217,31 @@ class MergeModel(object):
         for feature_group in eligable_address_features.values():
             if feature_group[0].feature in non_eligable_features:
                 for feature in feature_group:
-                    self.groups.append([FasmLine(set_feature=feature, annotations=None, comment=None)])
+                    self.groups.append(
+                        [
+                            FasmLine(
+                                set_feature=feature,
+                                annotations=None,
+                                comment=None)
+                        ])
             else:
                 if len(feature_group) > 1:
-                    self.groups.append([FasmLine(set_feature=merge_features(feature_group), annotations=None, comment=None)])
+                    self.groups.append(
+                        [
+                            FasmLine(
+                                set_feature=merge_features(feature_group),
+                                annotations=None,
+                                comment=None)
+                        ])
                 else:
                     for feature in feature_group:
-                        self.groups.append([FasmLine(set_feature=feature, annotations=None, comment=None)])
+                        self.groups.append(
+                            [
+                                FasmLine(
+                                    set_feature=feature,
+                                    annotations=None,
+                                    comment=None)
+                            ])
 
     def output_sorted_lines(self, zero_function=None, sort_key=None):
         feature_groups = {}
@@ -256,11 +280,14 @@ class MergeModel(object):
 
         for group_id in group_ids:
             flattened_group = []
-            for group in sorted(feature_groups[group_id], key=feature_group_key):
+            for group in sorted(feature_groups[group_id],
+                                key=feature_group_key):
                 flattened_group.extend(group)
 
             if zero_function is not None:
-                if all(zero_function(line.set_feature.feature) for line in flattened_group if line.set_feature):
+                if all(zero_function(line.set_feature.feature)
+                       for line in flattened_group
+                       if line.set_feature):
                     continue
 
             output_groups.append(flattened_group)
@@ -271,8 +298,10 @@ class MergeModel(object):
             for line in output_groups[idx]:
                 yield line
 
-            if idx != len(output_groups)-1:
-                yield FasmLine(set_feature=None, annotations=None, comment=None)
+            if idx != len(output_groups) - 1:
+                yield FasmLine(
+                    set_feature=None, annotations=None, comment=None)
+
 
 def merge_and_sort(model, zero_function=None, sort_key=None):
     """ Given a model, groups and sorts entries.
@@ -309,4 +338,5 @@ def merge_and_sort(model, zero_function=None, sort_key=None):
         merged_model.add_to_model(line)
 
     merged_model.merge_addresses()
-    return merged_model.output_sorted_lines(zero_function=zero_function, sort_key=sort_key)
+    return merged_model.output_sorted_lines(
+        zero_function=zero_function, sort_key=sort_key)
