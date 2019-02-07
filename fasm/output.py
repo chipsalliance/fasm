@@ -73,7 +73,7 @@ def merge_features(features):
                 assert bit not in set_bits
                 cleared_bits.add(bit)
 
-    max_bit = max(set_bits, cleared_bits)
+    max_bit = max(set_bits | cleared_bits)
 
     final_value = 0
     for bit in set_bits:
