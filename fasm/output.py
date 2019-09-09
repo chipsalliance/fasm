@@ -376,6 +376,11 @@ def merge_and_sort(model, zero_function=None, sort_key=None):
     for line in model:
         merged_model.add_to_model(line)
 
+    # Add the last processed annotation or comment blocks to the model
+    if merged_model.state != MergeModel.State.NoGroup:
+        if merged_model.current_group is not None:
+            merged_model.groups.append(merged_model.current_group)
+
     merged_model.merge_addresses()
     return merged_model.output_sorted_lines(
         zero_function=zero_function, sort_key=sort_key)
