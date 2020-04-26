@@ -219,7 +219,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'symbiflow-fasm', u'SymbiFlow FASM Documentation', [author], 1)
+    (master_doc, 'symbiflow-fasm', u'SymbiFlow FASM Documentation',
+        [author], 1)
 ]
 
 # -- Options for Texinfo output -------------------------------------------
@@ -238,8 +239,4 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 
 def setup(app):
-    github_code_repo = 'https://github.com/SymbiFlow/fasm/'
-    github_code_branch = 'blob/master/'
-
-    docs_root_dir = os.path.realpath(os.path.dirname(__file__))
-    code_root_dir = os.path.realpath(os.path.join(docs_root_dir, ".."))
+    pass
