@@ -5,6 +5,7 @@ include *.md
 include COPYING
 
 include *.yapf
+include *.yml
 
 recursive-include examples *.fasm
 
