@@ -78,7 +78,7 @@ else:
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = re.sub('^v', '', os.popen('git describe --always').read().strip())
+release = re.sub('^v', '', os.popen('git describe').read().strip())
 # The short X.Y version.
 version = release
 
