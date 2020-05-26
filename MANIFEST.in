@@ -5,6 +5,8 @@ include *.md
 include LICENSE
 include AUTHORS
 
+include Makefile
+
 include *.yapf
 include *.yml
 
