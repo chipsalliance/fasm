@@ -2,7 +2,10 @@
 include *.md
 
 # Include the license file
-include COPYING
+include LICENSE
+include AUTHORS
+
+include Makefile
 
 include *.yapf
 include *.yml

@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
 # Copyright (C) 2017-2020  The SymbiFlow Authors.
 #
 # Use of this source code is governed by a ISC-style
@@ -8,3 +5,11 @@
 # https://opensource.org/licenses/ISC
 #
 # SPDX-License-Identifier: ISC
+
+PYTHON_FORMAT ?= yapf
+format:
+	$(IN_ENV) find . -name \*.py $(FORMAT_EXCLUDE) -print0 | xargs -0 -P $$(nproc) yapf -p -i
+
+check-license:
+	@./.github/check_license.sh
+	@./.github/check_python_scripts.sh
