@@ -9,3 +9,7 @@
 PYTHON_FORMAT ?= yapf
 format:
 	$(IN_ENV) find . -name \*.py $(FORMAT_EXCLUDE) -print0 | xargs -0 -P $$(nproc) yapf -p -i
+
+check-license:
+	@./.github/check_license.sh
+	@./.github/check_python_scripts.sh
