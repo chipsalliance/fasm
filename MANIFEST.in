@@ -19,5 +19,6 @@ recursive-include docs *.txt
 recursive-include docs *.yml
 recursive-include docs *.png
 recursive-include docs Makefile
+recursive-include tests *
 prune docs/_*
 prune docs/env
