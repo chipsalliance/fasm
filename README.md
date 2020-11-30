@@ -1,7 +1,32 @@
 ## FPGA Assembly (FASM) Parser and Generation library
 
-This library provides a textX grammer for the FASM file format some basic
+This repository documents the FASM file format and provides parsing libraries and simple tooling for working with FASM files.
+
+It provides both a pure Python parser based on `textx` and a significantly faster C parser based on `ANTLR`. The library will try and use the ANTLR parser first and fall back to the `textx` parser if the compiled module is not found.
+
+Which parsers are supported by your currently install can be found via `python3 -c "import fasm.parser as p; print(p.available)`. The currently in use parser can be found via `fasm.parser.implementation`.
+
+It is highly recommended to use the ANTLR parser as it is about 15 times faster.
+
 functions for parsing and generating FASM files.
+
+## Build Instructions
+
+CMake is required, and ANTLR has a few dependencies:
+
+    sudo apt install cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+
+Pull dependencies in `third_party`:
+
+    git submodule update --init
+
+Build:
+
+    make build
+
+Test with:
+
+    python setup.py test
 
 ## FPGA Assembly (FASM)
 

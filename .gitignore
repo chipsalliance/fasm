@@ -117,3 +117,6 @@ dmypy.json
 
 # Emacs temporary files
 *~
+
+# Generated files
+/fasm/parser/tags.py
