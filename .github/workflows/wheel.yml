@@ -1,3 +1,6 @@
+# Builds a binary distibutable package.
+# Minimal functionality checks may be run as part of the build process, but
+# source code checks and extensive functionality checks (e.g. tox) belong in presubmit.yml
 name: Python wheels
 on: [push, pull_request]
 jobs:

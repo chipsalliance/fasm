@@ -1,3 +1,5 @@
+# Checks code that code meets requirements for a pull request.
+# Any automated checks for code quality and compliance belongs here.
 name: presubmit
 on: [push, pull_request]
 jobs:
