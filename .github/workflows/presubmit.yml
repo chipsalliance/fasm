@@ -8,10 +8,18 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
       - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install clang-format
+          python -m pip install --upgrade pip
+          pip install yapf
+      - name: Python style check
+        run: |
+          make format
+          test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }
       - name: C++ style check
         run: |
           make format-cpp

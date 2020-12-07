@@ -8,7 +8,6 @@
 # https://opensource.org/licenses/ISC
 #
 # SPDX-License-Identifier: ISC
-
 """ Output utilities for FASM.
 
 merge_features - Combines multiple FASM SetFasmFeature into one.

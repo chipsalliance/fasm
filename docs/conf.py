@@ -41,12 +41,8 @@ sys.path.insert(0, os.path.abspath('.'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.doctest',
-    'sphinx.ext.imgmath',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.todo',
+    'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.doctest',
+    'sphinx.ext.imgmath', 'sphinx.ext.napoleon', 'sphinx.ext.todo',
     'sphinx_markdown_tables'
 ]
 
@@ -136,8 +132,7 @@ html_theme_options = {
     # https://material.io/icons/
     'header_links': [
         ('Home', 'index', False, 'home'),
-        ("GitHub", "https://github.com/SymbiFlow/fasm",
-         True, 'link'),
+        ("GitHub", "https://github.com/SymbiFlow/fasm", True, 'link'),
     ],
 
     # Customize css colors.
@@ -148,27 +143,36 @@ html_theme_options = {
     #         indigo, light_blue, light_green, lime, orange, pink, purple, red,
     #         teal, yellow
     # (Default: indigo)
-    'primary_color': 'deep_purple',
+    'primary_color':
+    'deep_purple',
     # Values: Same as primary_color. (Default: pink)
-    'accent_color': 'purple',
+    'accent_color':
+    'purple',
 
     # Customize layout.
     # For details see link.
     # https://getmdl.io/components/index.html#layout-section
-    'fixed_drawer': True,
-    'fixed_header': True,
-    'header_waterfall': True,
-    'header_scroll': False,
+    'fixed_drawer':
+    True,
+    'fixed_header':
+    True,
+    'header_waterfall':
+    True,
+    'header_scroll':
+    False,
 
     # Render title in header.
     # Values: True, False (Default: False)
-    'show_header_title': False,
+    'show_header_title':
+    False,
     # Render title in drawer.
     # Values: True, False (Default: True)
-    'show_drawer_title': True,
+    'show_drawer_title':
+    True,
     # Render footer.
     # Values: True, False (Default: True)
-    'show_footer': True
+    'show_footer':
+    True
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -227,7 +231,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'symbiflow-fasm', u'SymbiFlow FASM Documentation',
+    (
+        master_doc, 'symbiflow-fasm', u'SymbiFlow FASM Documentation',
         [author], 1)
 ]
 
