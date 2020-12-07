@@ -15,9 +15,7 @@ echo
 
 ERROR_FILES_SHEBANG=""
 ERROR_FILES_UTF_CODING=""
-FILES_TO_CHECK=`find . \
-    -type f \( -name '*.py' \) \
-    \( -not -path "*/.*/*" -not -path "*/third_party/*" -not -path "*/env/*" \)`
+FILES_TO_CHECK=`git ls-files | grep -ve '^third_party\|^\.' | grep -e '.py$'`
 
 for file in $FILES_TO_CHECK; do
     echo "Checking $file"

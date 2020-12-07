@@ -1,0 +1,51 @@
+name: presubmit
+on: [push, pull_request]
+jobs:
+  check:
+    name: Source checks
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install clang-format
+      - name: C++ style check
+        run: |
+          make format-cpp
+          test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }
+      - name: Check license
+        run: ./.github/check_license.sh
+      - name: Python checks
+        run: ./.github/check_python_scripts.sh
+  test:
+    name: Test Python package
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        include:
+          - python-version: 3.5
+            TOXENV: py35
+          - python-version: 3.6
+            TOXENV: py36
+          - python-version: 3.7
+            TOXENV: py37
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+          python -m pip install --upgrade pip
+          pip install -U setuptools
+          pip install flake8 pytest tox
+      - name: Tox
+        run: tox -e ${{ matrix.TOXENV }}

@@ -6,10 +6,22 @@
 #
 # SPDX-License-Identifier: ISC
 
+.PHONY: build
+build:
+	python setup.py build
+
+.PHONY: install
+install:
+	python setup.py install
+
 PYTHON_FORMAT ?= yapf
 format:
-	$(IN_ENV) find . -name \*.py $(FORMAT_EXCLUDE) -print0 | xargs -0 -P $$(nproc) yapf -p -i
+	$(IN_ENV) git ls-files | grep -ve '^third_party\|^\.' | grep -e '.py$$' | xargs -r -P $$(nproc) yapf -p -i
 
 check-license:
 	@./.github/check_license.sh
 	@./.github/check_python_scripts.sh
+
+.PHONY: format-cpp
+format-cpp:
+	git ls-files | grep -e '\.cpp$$\|\.h$$' | xargs -r clang-format -style=file -i

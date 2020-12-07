@@ -14,9 +14,7 @@ echo "==========================="
 echo
 
 ERROR_FILES=""
-FILES_TO_CHECK=`find . \
-    -type f \( -name '*.sh' -o -name '*.py' -o -name 'Makefile' \) \
-    \( -not -path "*/.*/*" -not -path "*/third_party/*" \)`
+FILES_TO_CHECK=`git ls-files | grep -ve '^third_party\|^\.' | grep -e '\.sh$\|\.py$\|\.cpp$\|\.h$\|CMakeLists.txt$\|Makefile$'`
 
 for file in $FILES_TO_CHECK; do
     echo "Checking $file"
