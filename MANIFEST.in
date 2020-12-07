@@ -22,3 +22,4 @@ recursive-include docs Makefile
 recursive-include tests *
 prune docs/_*
 prune docs/env
+exclude .clang-format

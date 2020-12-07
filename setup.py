@@ -23,7 +23,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/SymbiFlow/fasm",
-    packages=setuptools.find_packages(exclude=('tests*',)),
+    packages=setuptools.find_packages(exclude=('tests*', )),
     package_data={
         'fasm': ['*.tx'],
     },
