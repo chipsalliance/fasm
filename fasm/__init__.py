@@ -12,7 +12,6 @@
 from __future__ import print_function
 import textx
 import os.path
-import argparse
 from collections import namedtuple
 import enum
 
@@ -339,22 +338,3 @@ def fasm_tuple_to_string(model, canonical=False):
         lines = list(sorted(set(lines)))
 
     return '\n'.join(lines) + '\n'
-
-
-def main():
-    parser = argparse.ArgumentParser('FASM tool')
-    parser.add_argument('file', help='Filename to process')
-    parser.add_argument(
-        '--canonical',
-        action='store_true',
-        help='Return canonical form of FASM.')
-
-    args = parser.parse_args()
-
-    fasm_tuples = parse_fasm_filename(args.file)
-
-    print(fasm_tuple_to_string(fasm_tuples, args.canonical))
-
-
-if __name__ == '__main__':
-    main()
