@@ -15,30 +15,59 @@ import enum
 
 class ValueFormat(enum.Enum):
     """ Number format used for a FASM value. """
-    PLAIN = 0  # 42
-    VERILOG_DECIMAL = 1  # 8'd42
-    VERILOG_HEX = 2  # 8'h2a
-    VERILOG_BINARY = 3  # 8'b00101010
-    VERILOG_OCTAL = 4  # 8'o52
+    PLAIN = 0
+    VERILOG_DECIMAL = 1
+    VERILOG_HEX = 2
+    VERILOG_BINARY = 3
+    VERILOG_OCTAL = 4
 
 
-# Python version of a SetFasmFeature line.
-# feature is a string
-# start and end are ints.  When FeatureAddress is missing, start=None and
-# end=None.
-# value is an int.
-#
-# When FeatureValue is missing, value=1.
-# value_format determines what to output the value.
-# Should be a ValueFormat or None.
-# If None, value must be 1 and the value will be omited.
+ValueFormat.PLAIN.__doc__ = \
+    "A decimal number without size or radix e.g. 42"
+ValueFormat.VERILOG_DECIMAL.__doc__ = \
+    "A decimal number with optional size e.g. 8'd42"
+ValueFormat.VERILOG_HEX.__doc__ = \
+    "A hexadecimal number with optional size e.g. 8'h2a"
+ValueFormat.VERILOG_BINARY.__doc__ = \
+    "A binary number with optional size e.g. 8'b00101010"
+ValueFormat.VERILOG_OCTAL.__doc__ = \
+    "An octal number with optional size e.g. 8'o52"
+
 SetFasmFeature = namedtuple(
     'SetFasmFeature', 'feature start end value value_format')
+SetFasmFeature.__doc__ = """
+Python version of a SetFasmFeature line such as:
+  feature[31:0] = 42
+
+feature is a string e.g. 'feature'
+
+start and end are ints e.g 31, 0
+When FeatureAddress is missing, start=None and
+end=None.
+
+value is an int e.g. 42
+When FeatureValue is missing, value=1.
+
+value_format determines how to output the value e.g. ValueFormat.PLAIN
+It should be a ValueFormat or None.
+If it is None, the value must be 1 and the value will
+be omitted from output.
+"""
 
 Annotation = namedtuple('Annotation', 'name value')
+Annotation.__doc__ = """
+Python version of an Annotation, such as:
+  { name = "value" }
 
-# Python version of FasmLine.
-# set_feature should be a SetFasmFeature or None.
-# annotations should be a tuple of Annotation or None.
-# comment should a string or None.
+Both name and value are strings (not None),
+holding the name and value, respectively.
+"""
+
 FasmLine = namedtuple('FasmLine', 'set_feature annotations comment')
+FasmLine.__doc__ = """
+Python version of a FasmLine.
+
+set_feature should be a SetFasmFeature or None.
+annotations should be a list of Annotation or None.
+comment should a string or None.
+"""

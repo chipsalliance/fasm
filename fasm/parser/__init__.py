@@ -11,8 +11,8 @@
 
 from warnings import warn
 
-# Parsers available
 available = []
+""" List of parser submodules available. Strings should match module names. """
 
 try:
     from fasm.parser.antlr import \

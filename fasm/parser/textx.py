@@ -15,8 +15,10 @@ import os.path
 from fasm.model import \
     ValueFormat, SetFasmFeature, Annotation, FasmLine
 
-# Import this to check the implemetation
 implementation = 'textx'
+"""
+Module name of the default parser implementation, accessible as fasm.parser
+"""
 
 
 def assert_max_width(width, value):
