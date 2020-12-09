@@ -68,6 +68,7 @@ add_library(parse_fasm SHARED ParseFasm.cpp
   ${ANTLR_FasmLexer_CXX_OUTPUTS}
   ${ANTLR_FasmParser_CXX_OUTPUTS})
 target_link_libraries(parse_fasm ${ANTLR4_RUNTIME})
+target_compile_options(parse_fasm PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
 
 add_executable(parse_fasm_tests
   ParseFasmTests.cpp
@@ -75,6 +76,7 @@ add_executable(parse_fasm_tests
   ${ANTLR_FasmParser_CXX_OUTPUTS})
 target_link_libraries(parse_fasm_tests ${ANTLR4_RUNTIME})
 target_link_libraries(parse_fasm_tests gtest_main)
+target_compile_options(parse_fasm_tests PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
 
 # Standalone executable
 add_executable(parse_fasm_run EXCLUDE_FROM_ALL
@@ -83,6 +85,7 @@ add_executable(parse_fasm_run EXCLUDE_FROM_ALL
   ${ANTLR_FasmParser_CXX_OUTPUTS})
 target_link_libraries(parse_fasm_run ${ANTLR4_RUNTIME})
 set_target_properties(parse_fasm_run PROPERTIES OUTPUT_NAME parse_fasm)
+target_compile_options(parse_fasm_run PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
 
 # Unit tests
 include(CTest)
