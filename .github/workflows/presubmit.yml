@@ -20,16 +20,16 @@ jobs:
           pip install yapf flake8
       - name: Python style check
         run: |
-          make format
+          make format lint
           test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }
       - name: C++ style check
         run: |
           make format-cpp
           test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }
       - name: Check license
-        run: ./.github/check_license.sh
+        run: make check-license
       - name: Python checks
-        run: ./.github/check_python_scripts.sh
+        run: make check-python-scripts
   test:
     name: Test Python package
     runs-on: ubuntu-20.04

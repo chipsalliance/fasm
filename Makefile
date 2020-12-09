@@ -6,27 +6,51 @@
 #
 # SPDX-License-Identifier: ISC
 
-.PHONY: build
-build:
-	python setup.py build
+define with_files
+  $(IN_ENV) git ls-files | grep -ve '^third_party\|^\.' | grep -e $(1) | xargs -r -P $$(nproc) $(2)
+endef
 
-.PHONY: install
-install:
-	python setup.py install
+define with_py
+  $(call with_files, '.py$$', $(1))
+endef
+
+define with_c
+  $(call with_files, '\.cpp$$\|\.h$$', $(1))
+endef
+
+# These checks should be run before pushing to save time.
+.PHONY: quick-checks
+quick-checks: format lint check format-cpp build test check-license check-python-scripts
+
+PYTHON_FORMAT ?= yapf
+.PHONY: format
+format:
+	$(call with_py, yapf -p -i)
+
+.PHONY: lint
+lint:
+	$(call with_py, flake8)
+
+.PHONY: format-cpp
+format-cpp:
+	$(call with_c, clang-format -style=file -i)
+
+.PHONY: build install clean develop
+build install clean develop:
+	python setup.py $@
+
+.PHONY: check
+check:
+	python setup.py check -m -s
 
 .PHONY: test
 test:
 	py.test -s tests
 
-PYTHON_FORMAT ?= yapf
-format:
-	$(IN_ENV) git ls-files | grep -ve '^third_party\|^\.' | grep -e '.py$$' | xargs -r -P $$(nproc) yapf -p -i
-	flake8 .
-
+.PHONY: check-license
 check-license:
 	@./.github/check_license.sh
-	@./.github/check_python_scripts.sh
 
-.PHONY: format-cpp
-format-cpp:
-	git ls-files | grep -e '\.cpp$$\|\.h$$' | xargs -r clang-format -style=file -i
+.PHONY: check-python-scripts
+check-python-scripts:
+	@./.github/check_python_scripts.sh
