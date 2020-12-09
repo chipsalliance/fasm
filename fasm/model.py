@@ -53,6 +53,15 @@ It should be a ValueFormat or None.
 If it is None, the value must be 1 and the value will
 be omitted from output.
 """
+SetFasmFeature.feature.__doc__ = "Feature name (string)"
+SetFasmFeature.start.__doc__ = \
+    "Starting value of the feature range (int or None)"
+SetFasmFeature.end.__doc__ = \
+    "Ending value of the feature range (int or None)"
+SetFasmFeature.value.__doc__ = \
+    "FeatureValue describing the value, or None"
+SetFasmFeature.value_format.__doc__ = \
+    "ValueFormat describing the format of the value, or None."
 
 Annotation = namedtuple('Annotation', 'name value')
 Annotation.__doc__ = """
@@ -62,12 +71,19 @@ Python version of an Annotation, such as:
 Both name and value are strings (not None),
 holding the name and value, respectively.
 """
+Annotation.name.__doc__ = "Annotation name (string)"
+Annotation.value.__doc__ = "Annotation value (string)"
 
 FasmLine = namedtuple('FasmLine', 'set_feature annotations comment')
 FasmLine.__doc__ = """
-Python version of a FasmLine.
+Python version of a FasmLine such as:
+feature[31:0] = 42 { name = "value" } # comment
 
 set_feature should be a SetFasmFeature or None.
 annotations should be a list of Annotation or None.
-comment should a string or None.
+comment should a string or None, e.g. " comment"
 """
+FasmLine.set_feature.__doc__ = "SetFasmFeature or None"
+FasmLine.annotations.__doc__ = "List of Annotation or None"
+FasmLine.comment.__doc__ = \
+    "String or none containing the line comment (after '#')"
