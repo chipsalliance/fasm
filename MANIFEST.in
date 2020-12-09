@@ -20,6 +20,15 @@ recursive-include docs *.yml
 recursive-include docs *.png
 recursive-include docs Makefile
 recursive-include tests *
+prune tests/__pycache__
 prune docs/_*
 prune docs/env
+
+include src/*
+include src/antlr/*
+recursive-include third_party *
+global-exclude .git
+exclude .gitmodules
 exclude .clang-format
+
+recursive-include fasm/parser *.tx

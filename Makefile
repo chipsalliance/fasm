@@ -14,9 +14,14 @@ build:
 install:
 	python setup.py install
 
+.PHONY: test
+test:
+	py.test -s tests
+
 PYTHON_FORMAT ?= yapf
 format:
 	$(IN_ENV) git ls-files | grep -ve '^third_party\|^\.' | grep -e '.py$$' | xargs -r -P $$(nproc) yapf -p -i
+	flake8 .
 
 check-license:
 	@./.github/check_license.sh
