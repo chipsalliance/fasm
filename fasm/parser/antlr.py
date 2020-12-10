@@ -11,7 +11,7 @@
 
 from ctypes import CDLL, POINTER, CFUNCTYPE, c_char, c_size_t, c_char_p
 import os
-from sys import byteorder, stderr
+from sys import byteorder
 from fasm.model import \
     SetFasmFeature, Annotation, FasmLine, ValueFormat
 from fasm.parser import tags
@@ -239,21 +239,26 @@ def parse_fasm_string(s):
         A list of fasm.model.FasmLine.
     """
     result = [None]
+    error = [None]
 
     # Use a closure to parse while allowing C++ to handle memory.
     @CFUNCTYPE(None, POINTER(c_char), c_size_t)
     def callback(s, n):
         result[0] = parse_fasm_data(s, n)
+        error[0] = None
 
     @CFUNCTYPE(None, c_size_t, c_size_t, c_char_p)
     def error_callback(line, position, message):
         result[0] = None
-        print(
+        error[0] = Exception(
             'Parse error at {}:{} - {}'.format(
-                line, position, message.decode('ascii')),
-            file=stderr)
+                line, position, message.decode('ascii')))
 
     parse_fasm.from_string(bytes(s, 'ascii'), 0, callback, error_callback)
+
+    if error[0] is not None:
+        raise error[0]
+
     return result[0]
 
 
@@ -271,19 +276,24 @@ def parse_fasm_filename(filename):
         A list of fasm.model.FasmLine.
     """
     result = [None]
+    error = [None]
 
     # Use a closure to parse while allowing C++ to handle memory.
     @CFUNCTYPE(None, POINTER(c_char), c_size_t)
     def callback(s, n):
         result[0] = parse_fasm_data(s, n)
+        error[0] = None
 
     @CFUNCTYPE(None, c_size_t, c_size_t, c_char_p)
     def error_callback(line, position, message):
         result[0] = None
-        print(
+        error[0] = Exception(
             'Parse error at {}:{} - {}'.format(
-                line, position, message.decode('ascii')),
-            file=stderr)
+                line, position, message.decode('ascii')))
 
     parse_fasm.from_file(bytes(filename, 'ascii'), 0, callback, error_callback)
+
+    if error[0] is not None:
+        raise error[0]
+
     return result[0]

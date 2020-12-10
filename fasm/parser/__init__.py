@@ -19,8 +19,12 @@ try:
         parse_fasm_filename, parse_fasm_string, implementation
     available.append('antlr')
 except ImportError as e:
-    warn('Importing fasm.parse_fasm: {}'.format(e), RuntimeWarning)
-    warn('Falling back on slower textX parser implementation', RuntimeWarning)
+    warn(
+        '\nFalling back on slower textX parser implementation:\n'
+        '  ImportError: {}\n'
+        'Please install all dependencies and reinstall with:\n'
+        '  pip uninstall\n'
+        '  pip install -v fasm'.format(e), RuntimeWarning)
     from fasm.parser.textx import \
         parse_fasm_filename, parse_fasm_string, implementation
 
