@@ -10,7 +10,26 @@
 # SPDX-License-Identifier: ISC
 
 import argparse
-from fasm import fasm_tuple_to_string, parse_fasm_filename
+import importlib
+import fasm.parser
+from fasm import fasm_tuple_to_string
+
+
+def nullable_string(val):
+    if not val:
+        return None
+    return val
+
+
+def get_fasm_parser(name=None):
+    module_name = None
+    if name is None:
+        module_name = 'fasm.parser'
+    elif name in fasm.parser.available:
+        module_name = 'fasm.parser.' + name
+    else:
+        raise Exception("Parser '{}' is not available.".format(name))
+    return importlib.import_module(module_name)
 
 
 def main():
@@ -20,12 +39,20 @@ def main():
         '--canonical',
         action='store_true',
         help='Return canonical form of FASM.')
+    parser.add_argument(
+        '--parser',
+        type=nullable_string,
+        help='Select FASM parser to use. '
+        'Default is to choose the best implementation available.')
 
     args = parser.parse_args()
 
-    fasm_tuples = parse_fasm_filename(args.file)
-
-    print(fasm_tuple_to_string(fasm_tuples, args.canonical))
+    try:
+        fasm_parser = get_fasm_parser(args.parser)
+        fasm_tuples = fasm_parser.parse_fasm_filename(args.file)
+        print(fasm_tuple_to_string(fasm_tuples, args.canonical))
+    except Exception as e:
+        print('Error: ' + str(e))
 
 
 if __name__ == '__main__':
