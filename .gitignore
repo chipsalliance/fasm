@@ -80,6 +80,7 @@ profile_default/
 ipython_config.py
 
 # pyenv
+env/
 .python-version
 
 # celery beat schedule file
