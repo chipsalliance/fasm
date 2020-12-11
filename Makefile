@@ -6,6 +6,11 @@
 #
 # SPDX-License-Identifier: ISC
 
+IN_ENV = if [ -e env/bin/activate ]; then . env/bin/activate; fi;
+env: requirements.txt
+	python3 -mvenv env
+	$(IN_ENV) pip install --upgrade -r requirements.txt
+
 define with_files
   $(IN_ENV) git ls-files | grep -ve '^third_party\|^\.' | grep -e $(1) | xargs -r -P $$(nproc) $(2)
 endef
@@ -37,15 +42,15 @@ format-cpp:
 
 .PHONY: build install clean develop
 build install clean develop:
-	python setup.py $@
+	$(IN_ENV) python setup.py $@
 
 .PHONY: check
 check:
-	python setup.py check -m -s
+	$(IN_ENV) python setup.py check -m -s
 
 .PHONY: test
 test:
-	py.test -s tests
+	$(IN_ENV) py.test -s tests
 
 .PHONY: check-license
 check-license:

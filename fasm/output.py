@@ -113,6 +113,7 @@ class MergeModel(object):
     merging.
 
     """
+
     class State(enum.Enum):
         """ State of grouper. """
         NoGroup = 1

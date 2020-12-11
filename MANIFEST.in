@@ -6,6 +6,7 @@ include LICENSE
 include AUTHORS
 
 include Makefile
+include requirements.txt
 
 include *.yapf
 include *.yml

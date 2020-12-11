@@ -1,0 +1,7 @@
+check-manifest
+flake8
+pytest
+textx
+tox
+wheel
+yapf==0.24.0
