@@ -121,3 +121,4 @@ dmypy.json
 
 # Generated files
 /fasm/parser/tags.py
+/fasm/parser/antlr_to_tuple.c

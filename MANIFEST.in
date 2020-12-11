@@ -33,4 +33,6 @@ exclude .gitmodules
 exclude .clang-format
 
 recursive-include fasm/parser *.tx
+recursive-include fasm/parser *.pyx
+exclude fasm/parser/*.c
 include pyproject.toml
