@@ -18,6 +18,8 @@ import subprocess
 from distutils.version import LooseVersion
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
+from Cython.Build import cythonize
+import traceback
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -33,8 +35,19 @@ class CMakeExtension(Extension):
 
 
 class CMakeBuild(build_ext):
+    def copy_extensions_to_source(self):
+        original_extensions = list(self.extensions)
+        self.extensions = [
+            ext for ext in self.extensions
+            if not isinstance(ext, CMakeExtension)
+        ]
+        super().copy_extensions_to_source()
+        self.extensions = original_extensions
+
     def run(self):
         try:
+            super().run()
+
             try:
                 out = subprocess.check_output(['cmake', '--version'])
             except OSError:
@@ -51,40 +64,46 @@ class CMakeBuild(build_ext):
             for ext in self.extensions:
                 self.build_extension(ext)
 
-        except BaseException:
+        except BaseException as e:
             print(
                 "Failed to build ANTLR parser, "
-                "falling back on slower textX parser.")
+                "falling back on slower textX parser. Error:\n", e)
+            traceback.print_exc()
 
     def build_extension(self, ext):
-        extdir = os.path.join(
-            os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name))),
-            ext.prefix)
-        cmake_args = [
-            '-DCMAKE_INSTALL_PREFIX=' + extdir,
-            '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-            '-DPYTHON_EXECUTABLE=' + sys.executable
-        ]
+        if isinstance(ext, CMakeExtension):
+            extdir = os.path.join(
+                os.path.abspath(
+                    os.path.dirname(self.get_ext_fullpath(ext.name))),
+                ext.prefix)
+            cmake_args = [
+                '-DCMAKE_INSTALL_PREFIX=' + extdir,
+                '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
+                '-DPYTHON_EXECUTABLE=' + sys.executable
+            ]
 
-        cfg = 'Debug' if self.debug else 'Release'
-        build_args = ['--config', cfg]
-        cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-        build_args += ['--', '-j2']
+            cfg = 'Debug' if self.debug else 'Release'
+            build_args = ['--config', cfg]
+            cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
+            build_args += ['--', '-j2']
 
-        env = os.environ.copy()
-        env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(
-            env.get('CXXFLAGS', ''), self.distribution.get_version())
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
-        subprocess.check_call(
-            ['cmake', ext.sourcedir] + cmake_args,
-            cwd=self.build_temp,
-            env=env)
-        subprocess.check_call(
-            ['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
-        subprocess.check_call(['cmake', '--install', '.'], cwd=self.build_temp)
-        subprocess.check_call(['ctest'], cwd=self.build_temp)
-        print()  # Add an empty line for cleaner output
+            env = os.environ.copy()
+            env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(
+                env.get('CXXFLAGS', ''), self.distribution.get_version())
+            if not os.path.exists(self.build_temp):
+                os.makedirs(self.build_temp)
+            subprocess.check_call(
+                ['cmake', ext.sourcedir] + cmake_args,
+                cwd=self.build_temp,
+                env=env)
+            subprocess.check_call(
+                ['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
+            subprocess.check_call(
+                ['cmake', '--install', '.'], cwd=self.build_temp)
+            subprocess.check_call(['ctest'], cwd=self.build_temp)
+            print()  # Add an empty line for cleaner output
+        else:
+            super().build_extension(ext)
 
 
 setuptools.setup(
@@ -109,7 +128,7 @@ setuptools.setup(
     },
     ext_modules=[
         CMakeExtension('parse_fasm', sourcedir='src', prefix='fasm/parser')
-    ],
+    ] + cythonize("fasm/parser/antlr_to_tuple.pyx"),
     cmdclass={
         'build_ext': CMakeBuild,
     },

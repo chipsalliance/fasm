@@ -1,4 +1,5 @@
 check-manifest
+cython
 flake8
 pytest
 textx
