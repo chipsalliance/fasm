@@ -51,7 +51,7 @@ endif()
 if(${CMAKE_GENERATOR} MATCHES ".* Makefiles")
   # This avoids
   # 'warning: jobserver unavailable: using -j1. Add '+' to parent make rule.'
-  set(ANTLR4_BUILD_COMMAND $(MAKE))
+  set(ANTLR4_BUILD_COMMAND $(MAKE) CXX_FLAGS="-fPIC" C_FLAGS="-fPIC")
 elseif(${CMAKE_GENERATOR} MATCHES "Visual Studio.*")
   set(ANTLR4_BUILD_COMMAND
       ${CMAKE_COMMAND}
@@ -68,7 +68,8 @@ else()
   set(ANTLR4_BUILD_COMMAND
       ${CMAKE_COMMAND}
           --build .
-          --target)
+          --target
+          -DCMAKE_POSITION_INDEPENDENT_CODE=ON)
 endif()
 
 if(NOT DEFINED ANTLR4_WITH_STATIC_CRT)
