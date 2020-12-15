@@ -10,7 +10,7 @@
 # SPDX-License-Identifier: ISC
 
 from __future__ import print_function
-from fasm.model import ValueFormat, SetFasmFeature, FasmLine
+from fasm.model import ValueFormat, SetFasmFeature, Annotation, FasmLine
 from fasm.parser import parse_fasm_filename, parse_fasm_string
 
 
