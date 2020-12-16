@@ -36,8 +36,11 @@ class CMakeExtension(Extension):
 
 class CMakeBuild(build_ext):
     user_options = [
-        ('antlr-runtime=', None, "Whether to use a 'static' or 'shared' ANTLR runtime."),
+        (
+            'antlr-runtime=', None,
+            "Whether to use a 'static' or 'shared' ANTLR runtime."),
     ]
+
     def copy_extensions_to_source(self):
         original_extensions = list(self.extensions)
         self.extensions = [
@@ -117,7 +120,9 @@ class CMakeBuild(build_ext):
 
     def finalize_options(self):
         super().finalize_options()
-        assert self.antlr_runtime in ['static', 'shared'], 'Invalid antlr_runtime'
+        assert self.antlr_runtime in [
+            'static', 'shared'
+        ], 'Invalid antlr_runtime'
 
 
 setuptools.setup(
