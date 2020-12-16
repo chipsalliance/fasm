@@ -34,12 +34,13 @@ class CMakeExtension(Extension):
         self.prefix = prefix
 
 
-class CMakeBuild(build_ext):
+class AntlrCMakeBuild(build_ext):
     user_options = [
         (
             'antlr-runtime=', None,
             "Whether to use a 'static' or 'shared' ANTLR runtime."),
     ]
+    ANTLR_RUNTIMES = ['static', 'shared']
 
     def copy_extensions_to_source(self):
         original_extensions = list(self.extensions)
@@ -99,8 +100,13 @@ class CMakeBuild(build_ext):
                 env.get('CXXFLAGS', ''), self.distribution.get_version())
             if not os.path.exists(self.build_temp):
                 os.makedirs(self.build_temp)
-            os.environ["CXXFLAGS"] = "-fPIC"
-            os.environ["CFLAGS"] = "-fPIC"
+
+            # When linking the ANTLR runtime statically, -fPIC is still
+            # necessary because libparse_fasm will be a shared library.
+            if self.antlr_runtime == 'static':
+                for flag in ["CFLAGS", "CXXFLAGS"]:
+                    os.environ[flag] = os.environ.get(flag, "") + " -fPIC"
+
             subprocess.check_call(
                 ['cmake', ext.sourcedir] + cmake_args,
                 cwd=self.build_temp,
@@ -120,9 +126,9 @@ class CMakeBuild(build_ext):
 
     def finalize_options(self):
         super().finalize_options()
-        assert self.antlr_runtime in [
-            'static', 'shared'
-        ], 'Invalid antlr_runtime'
+        assert self.antlr_runtime in AntlrCMakeBuild.ANTLR_RUNTIMES, \
+            'Invalid antr_runtime {}, expected one of {}'.format(
+                self.antr_runtime, AntlrCMakeBuild.ANTLR_RUNTIMES)
 
 
 setuptools.setup(
@@ -149,6 +155,6 @@ setuptools.setup(
         CMakeExtension('parse_fasm', sourcedir='src', prefix='fasm/parser')
     ] + cythonize("fasm/parser/antlr_to_tuple.pyx"),
     cmdclass={
-        'build_ext': CMakeBuild,
+        'build_ext': AntlrCMakeBuild,
     },
 )

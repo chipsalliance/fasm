@@ -35,6 +35,8 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
+        antlr_runtime_type: [static, shared]
+        python_version: [3.5, 3.6, 3.7, 3.8, 3.9]
         include:
           - python-version: 3.5
             TOXENV: py35
@@ -61,4 +63,4 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Tox
-        run: tox -e ${{ matrix.TOXENV }}
+        run: ANTLR4_RUNTIME_TYPE=${{ matrix.antlr_runtime_type }} tox -e ${{ matrix.TOXENV }}
