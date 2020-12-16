@@ -92,6 +92,8 @@ class CMakeBuild(build_ext):
                 env.get('CXXFLAGS', ''), self.distribution.get_version())
             if not os.path.exists(self.build_temp):
                 os.makedirs(self.build_temp)
+            os.environ["CXXFLAGS"] = "-fPIC"
+            os.environ["CFLAGS"] = "-fPIC"
             subprocess.check_call(
                 ['cmake', ext.sourcedir] + cmake_args,
                 cwd=self.build_temp,
