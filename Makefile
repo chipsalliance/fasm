@@ -46,7 +46,7 @@ build install clean develop:
 
 .PHONY: build-shared
 build-shared:
-	$(IN_ENV) python setup.py build_ext --antlr-runtime=shared build
+	$(IN_ENV) python setup.py build --antlr-runtime=shared
 
 .PHONY: check
 check:
