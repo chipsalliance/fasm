@@ -44,6 +44,10 @@ format-cpp:
 build install clean develop:
 	$(IN_ENV) python setup.py $@
 
+.PHONY: build-shared
+build-shared:
+	$(IN_ENV) python setup.py build_ext --antlr-runtime=shared build
+
 .PHONY: check
 check:
 	$(IN_ENV) python setup.py check -m -s

@@ -35,6 +35,9 @@ class CMakeExtension(Extension):
 
 
 class CMakeBuild(build_ext):
+    user_options = [
+        ('antlr-runtime=', None, "Whether to use a 'static' or 'shared' ANTLR runtime."),
+    ]
     def copy_extensions_to_source(self):
         original_extensions = list(self.extensions)
         self.extensions = [
@@ -79,7 +82,8 @@ class CMakeBuild(build_ext):
             cmake_args = [
                 '-DCMAKE_INSTALL_PREFIX=' + extdir,
                 '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                '-DPYTHON_EXECUTABLE=' + sys.executable
+                '-DPYTHON_EXECUTABLE=' + sys.executable,
+                '-DANTLR_RUNTIME_TYPE=' + self.antlr_runtime
             ]
 
             cfg = 'Debug' if self.debug else 'Release'
@@ -106,6 +110,14 @@ class CMakeBuild(build_ext):
             print()  # Add an empty line for cleaner output
         else:
             super().build_extension(ext)
+
+    def initialize_options(self):
+        super().initialize_options()
+        self.antlr_runtime = 'static'
+
+    def finalize_options(self):
+        super().finalize_options()
+        assert self.antlr_runtime in ['static', 'shared'], 'Invalid antlr_runtime'
 
 
 setuptools.setup(
