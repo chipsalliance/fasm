@@ -27,7 +27,7 @@ prune docs/env
 
 include src/*
 include src/antlr/*
-recursive-include third_party *
+graft third_party
 global-exclude .git
 exclude .gitmodules
 exclude .clang-format
