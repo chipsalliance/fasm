@@ -39,7 +39,8 @@ Or, using `pip`:
 
 The runtime will be built and statically linked by default. This flag is available in the build_ext, build, develop, and install commands.
 
-The `--no-use-pep517` flag is need because PEP517 doesn't allow passing flags.
+The --no-use-pep517 flag is needed because there is currently no way to pass flags with PEP517.  
+Relevant issue: https://github.com/pypa/pip/issues/5771
 
 ## FPGA Assembly (FASM)
 
