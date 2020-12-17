@@ -35,9 +35,11 @@ The ANTLR runtime can either be linked statically or as a shared library. Use th
 
 Or, using `pip`:
 
-    pip install . --install-option="--antlr-runtime=shared"
+    pip install . --install-option="--antlr-runtime=shared" --no-use-pep517
 
 The runtime will be built and statically linked by default. This flag is available in the build_ext, build, develop, and install commands.
+
+The `--no-use-pep517` flag is need because PEP517 doesn't allow passing flags.
 
 ## FPGA Assembly (FASM)
 
