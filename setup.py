@@ -56,8 +56,8 @@ class SharedOptions():
         if other.antlr_runtime is not None:
             self.antlr_runtime = other.antlr_runtime
             assert self.antlr_runtime in SharedOptions.ANTLR_RUNTIMES, \
-                'Invalid antr_runtime {}, expected one of {}'.format(
-                    self.antr_runtime, SharedOptions.ANTLR_RUNTIMES)
+                'Invalid antlr_runtime {}, expected one of {}'.format(
+                    self.antlr_runtime, SharedOptions.ANTLR_RUNTIMES)
 
 
 # Global to allow sharing options.
