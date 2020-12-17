@@ -50,13 +50,14 @@ class SharedOptions():
         self.antlr_runtime = 'static'
 
     def initialize(self, other):
-        other.antlr_runtime = self.antlr_runtime
+        other.antlr_runtime = None
 
     def load(self, other):
-        self.antlr_runtime = other.antlr_runtime
-        assert self.antlr_runtime in SharedOptions.ANTLR_RUNTIMES, \
-            'Invalid antr_runtime {}, expected one of {}'.format(
-                self.antr_runtime, SharedOptions.ANTLR_RUNTIMES)
+        if other.antlr_runtime is not None:
+            self.antlr_runtime = other.antlr_runtime
+            assert self.antlr_runtime in SharedOptions.ANTLR_RUNTIMES, \
+                'Invalid antr_runtime {}, expected one of {}'.format(
+                    self.antr_runtime, SharedOptions.ANTLR_RUNTIMES)
 
 
 # Global to allow sharing options.
