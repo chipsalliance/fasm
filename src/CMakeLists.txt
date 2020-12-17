@@ -15,17 +15,33 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/antlr4/
 
 set(CMAKE_CXX_STANDARD 11)
 
+if(ANTLR_RUNTIME_TYPE STREQUAL "static")
+  # Required if linking to static library
+  add_definitions(-DANTLR4CPP_STATIC)
+
+  # Build the static library.
+  include(ExternalAntlr4Cpp)
+  set(ANTLR4_RUNTIME antlr4_static)
+else()
+  # Look to see if the shared library is already available.
+  find_library(ANTLR4_RUNTIME NAMES antlr4-runtime REQUIRED)
+
+  # If not, build it.
+  if(NOT ANTLR4_RUNTIME)
+    include(ExternalAntlr4Cpp)
+    set(ANTLR4_RUNTIME antlr4_shared)
+  endif()
+endif()
+
 # add antrl4cpp artifacts to project environment
 include_directories(${ANTLR4_INCLUDE_DIRS})
 
 # set variable pointing to the antlr tool that supports C++
 # this is not required if the jar file can be found under PATH environment
-set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/antlr4/antlr-4.9-complete.jar)
+set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/antlr4_lib/antlr-4.9-complete.jar)
 
 # add macros to generate ANTLR Cpp code from grammar
 find_package(ANTLR REQUIRED)
-
-find_library(ANTLR4_RUNTIME NAMES antlr4-runtime REQUIRED)
 
 # Unit testing library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/googletest EXCLUDE_FROM_ALL googletest)

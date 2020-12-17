@@ -28,6 +28,20 @@ Test with:
 
     python setup.py test
 
+The ANTLR runtime can either be linked statically or as a shared library. Use the
+`--antlr-runtime=[static|shared]` flag to select between the two modes e.g.:
+
+    python setup.py install --antlr-runtime=shared
+
+Or, using `pip`:
+
+    pip install . --install-option="--antlr-runtime=shared" --no-use-pep517
+
+The runtime will be built and statically linked by default. This flag is available in the build_ext, build, develop, and install commands.
+
+The --no-use-pep517 flag is needed because there is currently no way to pass flags with PEP517.  
+Relevant issue: https://github.com/pypa/pip/issues/5771
+
 ## FPGA Assembly (FASM)
 
 FPGA Assembly is a file format designed by the

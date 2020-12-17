@@ -18,6 +18,9 @@ import subprocess
 from distutils.version import LooseVersion
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
+from distutils.command.build import build
+from setuptools.command.develop import develop
+from setuptools.command.install import install
 from Cython.Build import cythonize
 import traceback
 
@@ -34,7 +37,36 @@ class CMakeExtension(Extension):
         self.prefix = prefix
 
 
-class CMakeBuild(build_ext):
+# Used to share options between two classes.
+class SharedOptions():
+    ANTLR_RUNTIMES = ['static', 'shared']
+    options = [
+        (
+            'antlr-runtime=', None,
+            "Whether to use a 'static' or 'shared' ANTLR runtime.")
+    ]
+
+    def __init__(self):
+        self.antlr_runtime = 'static'
+
+    def initialize(self, other):
+        other.antlr_runtime = None
+
+    def load(self, other):
+        if other.antlr_runtime is not None:
+            self.antlr_runtime = other.antlr_runtime
+            assert self.antlr_runtime in SharedOptions.ANTLR_RUNTIMES, \
+                'Invalid antlr_runtime {}, expected one of {}'.format(
+                    self.antlr_runtime, SharedOptions.ANTLR_RUNTIMES)
+
+
+# Global to allow sharing options.
+shared_options = SharedOptions()
+
+
+class AntlrCMakeBuild(build_ext):
+    user_options = SharedOptions.options
+
     def copy_extensions_to_source(self):
         original_extensions = list(self.extensions)
         self.extensions = [
@@ -45,6 +77,7 @@ class CMakeBuild(build_ext):
         self.extensions = original_extensions
 
     def run(self):
+        shared_options.load(self)
         try:
             super().run()
 
@@ -79,7 +112,8 @@ class CMakeBuild(build_ext):
             cmake_args = [
                 '-DCMAKE_INSTALL_PREFIX=' + extdir,
                 '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                '-DPYTHON_EXECUTABLE=' + sys.executable
+                '-DPYTHON_EXECUTABLE=' + sys.executable,
+                '-DANTLR_RUNTIME_TYPE=' + shared_options.antlr_runtime
             ]
 
             cfg = 'Debug' if self.debug else 'Release'
@@ -92,6 +126,13 @@ class CMakeBuild(build_ext):
                 env.get('CXXFLAGS', ''), self.distribution.get_version())
             if not os.path.exists(self.build_temp):
                 os.makedirs(self.build_temp)
+
+            # When linking the ANTLR runtime statically, -fPIC is still
+            # necessary because libparse_fasm will be a shared library.
+            if shared_options.antlr_runtime == 'static':
+                for flag in ["CFLAGS", "CXXFLAGS"]:
+                    os.environ[flag] = os.environ.get(flag, "") + " -fPIC"
+
             subprocess.check_call(
                 ['cmake', ext.sourcedir] + cmake_args,
                 cwd=self.build_temp,
@@ -104,6 +145,62 @@ class CMakeBuild(build_ext):
             print()  # Add an empty line for cleaner output
         else:
             super().build_extension(ext)
+
+    def initialize_options(self):
+        super().initialize_options()
+        shared_options.initialize(self)
+
+    def finalize_options(self):
+        super().finalize_options()
+        shared_options.load(self)
+
+
+class BuildCommand(build):
+    user_options = build.user_options + SharedOptions.options
+
+    def initialize_options(self):
+        super().initialize_options()
+        shared_options.initialize(self)
+
+    def finalize_options(self):
+        super().finalize_options()
+        shared_options.load(self)
+
+    def run(self):
+        shared_options.load(self)
+        super().run()
+
+
+class InstallCommand(install):
+    user_options = install.user_options + SharedOptions.options
+
+    def initialize_options(self):
+        super().initialize_options()
+        shared_options.initialize(self)
+
+    def finalize_options(self):
+        super().finalize_options()
+        shared_options.load(self)
+
+    def run(self):
+        shared_options.load(self)
+        super().run()
+
+
+class DevelopCommand(develop):
+    user_options = develop.user_options + SharedOptions.options
+
+    def initialize_options(self):
+        super().initialize_options()
+        shared_options.initialize(self)
+
+    def finalize_options(self):
+        super().finalize_options()
+        shared_options.load(self)
+
+    def run(self):
+        shared_options.load(self)
+        super().run()
 
 
 setuptools.setup(
@@ -130,6 +227,9 @@ setuptools.setup(
         CMakeExtension('parse_fasm', sourcedir='src', prefix='fasm/parser')
     ] + cythonize("fasm/parser/antlr_to_tuple.pyx"),
     cmdclass={
-        'build_ext': CMakeBuild,
+        'build_ext': AntlrCMakeBuild,
+        'build': BuildCommand,
+        'develop': DevelopCommand,
+        'install': InstallCommand,
     },
 )
