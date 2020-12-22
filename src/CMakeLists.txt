@@ -25,9 +25,12 @@ if(ANTLR_RUNTIME_TYPE STREQUAL "static")
 else()
   # Look to see if the shared library is already available.
   find_library(ANTLR4_RUNTIME NAMES antlr4-runtime REQUIRED)
+  find_path(ANTLR4_INCLUDE_DIRS antlr4-runtime.h
+    HINTS /usr/include/antlr4-runtime
+          $ENV{ANTLR4_RUNTIME_INCLUDE})
 
   # If not, build it.
-  if(NOT ANTLR4_RUNTIME)
+  if(NOT ANTLR4_RUNTIME OR NOT ANTLR4_INCLUDE_DIRS)
     include(ExternalAntlr4Cpp)
     set(ANTLR4_RUNTIME antlr4_shared)
   endif()
@@ -68,12 +71,6 @@ add_custom_target(tags.py ALL
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ParseFasm.cpp
   VERBATIM
   )
-
-find_path(ANTLR_RUNTIME_INCLUDE antlr4-runtime.h
-  HINTS /usr/include/antlr4-runtime
-        $ENV{ANTLR4_RUNTIME_INCLUDE}
-  REQUIRED)
-include_directories(${ANTLR_RUNTIME_INCLUDE})
 
 # Include generated files in project environment
 include_directories(${ANTLR_FasmLexer_OUTPUT_DIR})
