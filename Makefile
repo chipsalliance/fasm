@@ -1,65 +1,53 @@
-# Copyright (C) 2017-2020  The SymbiFlow Authors.
-#
-# Use of this source code is governed by a ISC-style
-# license that can be found in the LICENSE file or at
-# https://opensource.org/licenses/ISC
-#
-# SPDX-License-Identifier: ISC
+ACTIVATE=[[ -e venv/bin/activate ]] && source venv/bin/activate;
 
-IN_ENV = if [ -e env/bin/activate ]; then . env/bin/activate; fi;
-env: requirements.txt
-	python3 -mvenv env
-	$(IN_ENV) pip install --upgrade -r requirements.txt
+SHELL := /bin/bash
 
-define with_files
-  $(IN_ENV) git ls-files | grep -ve '^third_party\|^\.' | grep -e $(1) | xargs -r -P $$(nproc) $(2)
-endef
+dist-clean: clean
+	rm -rf venv
 
-define with_py
-  $(call with_files, '.py$$', $(1))
-endef
+.PHONY: dist-clean
 
-define with_c
-  $(call with_files, '\.cpp$$\|\.h$$', $(1))
-endef
+clean:
+	rm -rf build dist *_*.egg-info
 
-# These checks should be run before pushing to save time.
-.PHONY: quick-checks
-quick-checks: format lint check format-cpp build test check-license check-python-scripts
+.PHONY: clean
 
-PYTHON_FORMAT ?= yapf
-.PHONY: format
-format:
-	$(call with_py, yapf -p -i)
+venv-clean:
+	rm -rf venv
 
-.PHONY: lint
-lint:
-	$(call with_py, flake8)
+.PHONY: venv-clean
 
-.PHONY: format-cpp
-format-cpp:
-	$(call with_c, clang-format -style=file -i)
+venv:
+	virtualenv --python=python3 venv
+	${ACTIVATE} pip install twine
+	${ACTIVATE} pip install -r requirements.txt
 
-.PHONY: build install clean develop
-build install clean develop:
-	$(IN_ENV) python setup.py $@
+.PHONY: venv
 
-.PHONY: build-shared
-build-shared:
-	$(IN_ENV) python setup.py build --antlr-runtime=shared
+build:
+	${ACTIVATE} python setup.py sdist bdist_wheel
 
-.PHONY: check
-check:
-	$(IN_ENV) python setup.py check -m -s
+.PHONY: build
+
+# PYPI_TEST = --repository-url https://test.pypi.org/legacy/
+PYPI_TEST = --repository testpypi
+
+upload-test: build
+	${ACTIVATE} twine upload ${PYPI_TEST}  dist/*
+
+.PHONY: upload-test
+
+upload: build
+	${ACTIVATE} twine upload --verbose dist/*
+
+.PHONY: upload
+
+install:
+	${ACTIVATE} python setup.py install
+
+.PHONY: install
+
+test:
+	${ACTIVATE} python test.py
 
 .PHONY: test
-test:
-	$(IN_ENV) py.test -s tests
-
-.PHONY: check-license
-check-license:
-	@./.github/check_license.sh
-
-.PHONY: check-python-scripts
-check-python-scripts:
-	@./.github/check_python_scripts.sh
