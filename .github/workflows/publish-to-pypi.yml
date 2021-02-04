@@ -1,0 +1,196 @@
+name: PyPI
+
+on:
+  push:
+    branches:
+      - master
+      - github-actions
+
+jobs:
+
+  Source:
+    runs-on: ubuntu-20.04
+    name: Source
+
+    steps:
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        # Always clone the full depth so git-describe works.
+        fetch-depth: 0
+        submodules: true
+
+    - name: Install dependencies (Ubuntu)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+
+    - name: Install build dependencies
+      run: |
+        pip install -U pip
+        pip install -r requirements.txt
+
+    - name: Install package dependencies
+      run: |
+        python setup.py install
+
+    - name: 🚧 Build distribution 📦
+      run: |
+        python setup.py sdist
+
+    - name: Check distribution 📦
+      run: |
+        twine check dist/*
+
+    - name: 📤 Publish source to Test PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_TEST_PASSWORD }}
+      run: |
+        twine upload --verbose --repository testpypi dist/*.tar.gz
+
+#    - name: 📤 Publish source to PyPI
+#      env:
+#        TWINE_USERNAME: __token__
+#        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+#      run: |
+#        twine upload dist/*.tar.gz
+
+  Linux:
+    strategy:
+      matrix:
+        python-version: [ 'cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39' ]
+      fail-fast: false
+
+    name: ${{ matrix.python-version }} • manylinux
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        # Always clone the full depth so git-describe works.
+        fetch-depth: 0
+        submodules: true
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v2
+
+    - name: Install build dependencies
+      run: |
+        pip install -U pip
+        pip install twine auditwheel
+
+    - name: 🚧 Build distribution 📦
+      uses: RalfG/python-wheels-manylinux-build@v0.3.3-manylinux2010_x86_64
+      with:
+        build-requirements: 'cython'
+        pre-build-command: 'bash .github/workflows/manylinux-install-cmake.sh'
+        python-versions: ${{ matrix.python-version }}
+        #pip-wheel-args: '-w ./dist --no-deps --verbose'
+
+    - name: List distribution 📦
+      run: |
+        set -x
+        ls -l dist/*
+        echo $USER
+        whoami
+        sudo chown -R $USER dist
+        ls -l dist/*
+        rm -v dist/*linux_x86_64*.whl
+        ls -l dist/*
+
+    - name: Check distribution 📦
+      run: |
+        for WHEEL in dist/*.whl; do
+          echo
+          echo "::group::Checking $WHEEL"
+          auditwheel show $WHEEL
+          echo
+          twine check $WHEEL
+          echo
+          echo "::endgroup::"
+        done
+
+    - name: 📤 Publish wheels to Test PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_TEST_PASSWORD }}
+      run: |
+        twine upload --verbose --repository testpypi dist/*.whl
+
+#    - name: 📤 Publish wheels to PyPI
+#      env:
+#        TWINE_USERNAME: __token__
+#        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+#      run: |
+#        twine upload dist/*.whl
+
+  MacAndWindows:
+    strategy:
+      matrix:
+        python-version: [ '3.5', '3.6', '3.7', '3.8', '3.9', 'pypy-3.6', 'pypy-3.7' ]
+        os: [windows-latest, macos-latest]
+      fail-fast: false
+
+    name: ${{ matrix.python-version }} • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        # Always clone the full depth so git-describe works.
+        fetch-depth: 0
+        submodules: true
+
+    - name: Install dependencies (Mac OS X)
+      if: startsWith(matrix.os, 'macos')
+      run: |
+        true
+
+    - name: Install dependencies (Windows)
+      if: startsWith(matrix.os, 'windows')
+      run: |
+        true
+
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install build dependencies
+      run: |
+        pip install -U pip
+        pip install -r requirements.txt
+
+    - name: Install package dependencies
+      run: |
+        python setup.py install
+
+    - name: 🚧 Build distribution 📦
+      run: |
+        python setup.py bdist_wheel
+
+    - name: Check distribution 📦
+      run: |
+        twine check dist/*
+
+    - name: 📤 Publish wheels to Test PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_TEST_PASSWORD }}
+      run: |
+        twine upload --verbose --repository testpypi dist/*.whl
+
+#    - name: 📤 Publish wheels to PyPI
+#      env:
+#        TWINE_USERNAME: __token__
+#        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+#      run: |
+#        twine upload dist/*.whl
