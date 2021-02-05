@@ -12,6 +12,7 @@
 import os
 import re
 import setuptools
+import shutil
 import subprocess
 import sys
 import traceback
@@ -125,8 +126,11 @@ class AntlrCMakeBuild(build_ext):
             env = os.environ.copy()
             env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(
                 env.get('CXXFLAGS', ''), self.distribution.get_version())
-            if not os.path.exists(self.build_temp):
-                os.makedirs(self.build_temp)
+
+            # Remove the existing build_temp directory if it already exists.
+            if os.path.exists(self.build_temp):
+                shutil.rmtree(self.build_temp)
+            os.makedirs(self.build_temp)
 
             # When linking the ANTLR runtime statically, -fPIC is still
             # necessary because libparse_fasm will be a shared library.
