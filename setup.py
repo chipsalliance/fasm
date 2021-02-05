@@ -133,11 +133,27 @@ class AntlrCMakeBuild(build_ext):
                 shutil.rmtree(self.build_temp)
             os.makedirs(self.build_temp)
 
-            # When linking the ANTLR runtime statically, -fPIC is still
-            # necessary because libparse_fasm will be a shared library.
-            if shared_options.antlr_runtime == 'static':
-                for flag in ["CFLAGS", "CXXFLAGS"]:
-                    os.environ[flag] = os.environ.get(flag, "") + " -fPIC"
+            for flag in ["CFLAGS", "CXXFLAGS"]:
+                flags = [os.environ.get(flag, "")]
+                if not flags[0]:
+                    flags.pop(0)
+
+                if shared_options.antlr_runtime == 'static':
+                    # When linking the ANTLR runtime statically, -fPIC is still
+                    # necessary because libparse_fasm will be a shared library.
+                    flags.append("-fPIC")
+
+                # FIXME: These should be in the cmake config file?
+                # Disable excessive warnings currently in ANTLR runtime.
+                # warning: type attributes ignored after type is already defined
+                # `class ANTLR4CPP_PUBLIC ATN;`
+                flags.append('-Wno-attributes')
+
+                # Lots of implicit fallthroughs.
+                flags.append('-Wimplicit-fallthrough=0')
+
+                if flags:
+                    os.environ[flag] = " ".join(flags)
 
             subprocess.check_call(
                 ['cmake', ext.sourcedir] + cmake_args,
