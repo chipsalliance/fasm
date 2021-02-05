@@ -137,7 +137,7 @@ jobs:
   MacAndWindows:
     strategy:
       matrix:
-        python-version: [ '3.5', '3.6', '3.7', '3.8', '3.9', 'pypy-3.6', 'pypy-3.7' ]
+        python-version: [ '3.6', '3.7', '3.8', '3.9', 'pypy-3.6', 'pypy-3.7' ]
         os: [windows-latest, macos-latest]
       fail-fast: false
 
