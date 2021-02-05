@@ -110,6 +110,9 @@ jobs:
         for WHEEL in dist/*.whl; do
           echo
           echo "::group::Checking $WHEEL"
+          echo
+          python -m zipfile --list $WHEEL
+          echo
           auditwheel show $WHEEL
           echo
           twine check $WHEEL
@@ -179,6 +182,7 @@ jobs:
 
     - name: Check distribution 📦
       run: |
+        python -m zipfile -l dist/*
         twine check dist/*
 
     - name: 📤 Publish wheels to Test PyPI
