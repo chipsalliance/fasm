@@ -105,6 +105,34 @@ class AntlrCMakeBuild(build_ext):
                 "falling back on slower textX parser. Error:\n", e)
             traceback.print_exc()
 
+    def add_flags(self):
+        if sys.platform.startswith('win'):
+            return
+
+        for flag in ["CFLAGS", "CXXFLAGS"]:
+            flags = [os.environ.get(flag, "")]
+            if not flags[0]:
+                flags.pop(0)
+
+            if shared_options.antlr_runtime == 'static':
+                # When linking the ANTLR runtime statically, -fPIC is
+                # still necessary because libparse_fasm will be a
+                # shared library.
+                flags.append("-fPIC")
+
+            # FIXME: These should be in the cmake config file?
+            # Disable excessive warnings currently in ANTLR runtime.
+            # warning: type attributes ignored after type is already defined
+            # `class ANTLR4CPP_PUBLIC ATN;`
+            flags.append('-Wno-attributes')
+
+            # Lots of implicit fallthroughs.
+            flags.append('-Wimplicit-fallthrough=0')
+
+            if flags:
+                os.environ[flag] = " ".join(flags)
+
+
     def build_extension(self, ext):
         if isinstance(ext, CMakeExtension):
             extdir = os.path.join(
@@ -133,27 +161,7 @@ class AntlrCMakeBuild(build_ext):
                 shutil.rmtree(self.build_temp, ignore_errors=True)
             os.makedirs(self.build_temp, exist_ok=True)
 
-            for flag in ["CFLAGS", "CXXFLAGS"]:
-                flags = [os.environ.get(flag, "")]
-                if not flags[0]:
-                    flags.pop(0)
-
-                if shared_options.antlr_runtime == 'static':
-                    # When linking the ANTLR runtime statically, -fPIC is still
-                    # necessary because libparse_fasm will be a shared library.
-                    flags.append("-fPIC")
-
-                # FIXME: These should be in the cmake config file?
-                # Disable excessive warnings currently in ANTLR runtime.
-                # warning: type attributes ignored after type is already defined
-                # `class ANTLR4CPP_PUBLIC ATN;`
-                flags.append('-Wno-attributes')
-
-                # Lots of implicit fallthroughs.
-                flags.append('-Wimplicit-fallthrough=0')
-
-                if flags:
-                    os.environ[flag] = " ".join(flags)
+            self.add_flags()
 
             subprocess.check_call(
                 ['cmake', ext.sourcedir] + cmake_args,
