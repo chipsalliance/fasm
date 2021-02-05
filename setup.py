@@ -121,7 +121,8 @@ class AntlrCMakeBuild(build_ext):
             cfg = 'Debug' if self.debug else 'Release'
             build_args = ['--config', cfg]
             cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            build_args += ['--', '-j']
+            if not sys.platform.startswith('win'):
+                build_args += ['--', '-j']
 
             env = os.environ.copy()
             env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(
