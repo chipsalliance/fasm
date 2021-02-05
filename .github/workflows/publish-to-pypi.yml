@@ -52,7 +52,7 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_TEST_PASSWORD }}
       run: |
-        twine upload --verbose --repository testpypi dist/*.tar.gz
+        twine upload --skip-existing --verbose --repository testpypi dist/*.tar.gz
 
 #    - name: 📤 Publish source to PyPI
 #      env:
@@ -122,7 +122,7 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_TEST_PASSWORD }}
       run: |
-        twine upload --verbose --repository testpypi dist/*.whl
+        twine upload --skip-existing --verbose --repository testpypi dist/*.whl
 
 #    - name: 📤 Publish wheels to PyPI
 #      env:
@@ -186,7 +186,7 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_TEST_PASSWORD }}
       run: |
-        twine upload --verbose --repository testpypi dist/*.whl
+        twine upload --skip-existing --verbose --repository testpypi dist/*.whl
 
 #    - name: 📤 Publish wheels to PyPI
 #      env:
