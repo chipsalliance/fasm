@@ -14,6 +14,13 @@ project(parse_fasm)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/antlr4/runtime/Cpp/cmake)
 
 set(CMAKE_CXX_STANDARD 11)
+if (MSVC_VERSION GREATER_EQUAL "1900")
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("/std:c++latest" _cpp_latest_flag_supported)
+    if (_cpp_latest_flag_supported)
+        add_compile_options("/std:c++latest")
+    endif()
+endif()
 
 if(ANTLR_RUNTIME_TYPE STREQUAL "static")
   # Required if linking to static library
