@@ -9,20 +9,21 @@
 #
 # SPDX-License-Identifier: ISC
 
-import setuptools
 import os
 import re
-import sys
+import setuptools
 import subprocess
+import sys
+import traceback
 
+from Cython.Build import cythonize
+from distutils.command.build import build
 from distutils.version import LooseVersion
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
-from distutils.command.build import build
 from setuptools.command.develop import develop
 from setuptools.command.install import install
-from Cython.Build import cythonize
-import traceback
+
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
