@@ -130,8 +130,8 @@ class AntlrCMakeBuild(build_ext):
 
             # Remove the existing build_temp directory if it already exists.
             if os.path.exists(self.build_temp):
-                shutil.rmtree(self.build_temp)
-            os.makedirs(self.build_temp)
+                shutil.rmtree(self.build_temp, ignore_errors=True)
+            os.makedirs(self.build_temp, exist_ok=True)
 
             for flag in ["CFLAGS", "CXXFLAGS"]:
                 flags = [os.environ.get(flag, "")]
