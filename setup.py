@@ -127,7 +127,7 @@ class AntlrCMakeBuild(build_ext):
             flags.append('-Wno-attributes')
 
             # Lots of implicit fallthroughs.
-            flags.append('-Wimplicit-fallthrough=0')
+            #flags.append('-Wimplicit-fallthrough=0')
 
             if flags:
                 os.environ[flag] = " ".join(flags)
