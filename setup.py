@@ -25,7 +25,6 @@ from setuptools.command.build_ext import build_ext
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 
-
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
@@ -127,11 +126,10 @@ class AntlrCMakeBuild(build_ext):
             flags.append('-Wno-attributes')
 
             # Lots of implicit fallthroughs.
-            #flags.append('-Wimplicit-fallthrough=0')
+            # flags.append('-Wimplicit-fallthrough=0')
 
             if flags:
                 os.environ[flag] = " ".join(flags)
-
 
     def build_extension(self, ext):
         if isinstance(ext, CMakeExtension):
