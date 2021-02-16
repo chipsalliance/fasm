@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2020  The SymbiFlow Authors.
+# Copyright (C) 2017-2021  The SymbiFlow Authors.
 #
 # Use of this source code is governed by a ISC-style
 # license that can be found in the LICENSE file or at
@@ -6,60 +6,144 @@
 #
 # SPDX-License-Identifier: ISC
 
-IN_ENV = if [ -e env/bin/activate ]; then . env/bin/activate; fi;
-env: requirements.txt
-	python3 -mvenv env
-	$(IN_ENV) pip install --upgrade -r requirements.txt
+# The top directory where environment will be created.
+TOP_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
+# A pip `requirements.txt` file.
+# https://pip.pypa.io/en/stable/reference/pip_install/#requirements-file-format
+REQUIREMENTS_FILE := requirements.txt
+
+# A conda `environment.yml` file.
+# https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html
+ENVIRONMENT_FILE := environment.yml
+
+# Rule to checkout the git submodule if it wasn't cloned.
+$(TOP_DIR)/third_party/make-env/conda.mk: $(TOP_DIR)/.gitmodules
+	cd $(TOP_DIR); git submodule update --init third_party/make-env
+	touch $(TOP_DIR)/third_party/make-env/conda.mk
+
+-include $(TOP_DIR)/third_party/make-env/conda.mk
+
+build-clean:
+	rm -rf dist fasm.egg-info
+
+.PHONY: build-clean
+
+build: | $(CONDA_ENV_PYTHON)
+	make build-clean
+	$(IN_CONDA_ENV) python setup.py sdist bdist_wheel
+
+.PHONY: build
+
+# Install into environment
+install: | $(CONDA_ENV_PYTHON)
+	$(IN_CONDA_ENV) python setup.py develop
+
+.PHONY: install
+
+# Build/install locally rather than inside the environment.
+# ------------------------------------------------------------------------
+local-build:
+	python setup.py build
+
+.PHONY: local-build
+
+local-build-shared:
+	python setup.py build --antlr-runtime=shared
+
+.PHONY: local-build-shared
+
+local-install:
+	python setup.py install
+
+.PHONY: local-install
+
+
+# Test, lint, auto-format.
+# ------------------------------------------------------------------------
+
+# Run the tests
+test: | $(CONDA_ENV_PYTHON)
+	$(IN_CONDA_ENV) py.test -s tests
+
+.PHONY: test
+
+# Find files to apply tools to while ignoring files.
 define with_files
-  $(IN_ENV) git ls-files | grep -ve '^third_party\|^\.' | grep -e $(1) | xargs -r -P $$(nproc) $(2)
+  $(IN_CONDA_ENV) git ls-files | grep -ve '^third_party\|^\.|^env' | grep -e $(1) | xargs -r -P $$(nproc) $(2)
 endef
 
-define with_py
+# Lint the python files
+lint: | $(CONDA_ENV_PYTHON)
+	$(call with_py_files, flake8)
+
+.PHONY: lint
+
+# Format the python files
+define with_py_files
   $(call with_files, '.py$$', $(1))
 endef
 
-define with_c
+PYTHON_FORMAT ?= yapf
+format-py: | $(CONDA_ENV_PYTHON)
+	$(call with_py_files, yapf -p -i)
+
+.PHONY: format-py
+
+# Format the C++ files
+define with_cpp_files
   $(call with_files, '\.cpp$$\|\.h$$', $(1))
 endef
 
-# These checks should be run before pushing to save time.
-.PHONY: quick-checks
-quick-checks: format lint check format-cpp build test check-license check-python-scripts
-
-PYTHON_FORMAT ?= yapf
-.PHONY: format
-format:
-	$(call with_py, yapf -p -i)
-
-.PHONY: lint
-lint:
-	$(call with_py, flake8)
+format-cpp:
+	$(call with_cpp_files, clang-format -style=file -i)
 
 .PHONY: format-cpp
-format-cpp:
-	$(call with_c, clang-format -style=file -i)
 
-.PHONY: build install clean develop
-build install clean develop:
-	$(IN_ENV) python setup.py $@
+# Format all the files!
+format: format-py format-cpp
+	true
 
-.PHONY: build-shared
-build-shared:
-	$(IN_ENV) python setup.py build --antlr-runtime=shared
+# Check - ???
+check: | $(CONDA_ENV_PYTHON)
+	$(IN_CONDA_ENV) python setup.py check -m -s
 
 .PHONY: check
-check:
-	$(IN_ENV) python setup.py check -m -s
 
-.PHONY: test
-test:
-	$(IN_ENV) py.test -s tests
-
-.PHONY: check-license
+# Check files have license headers.
 check-license:
 	@./.github/check_license.sh
 
-.PHONY: check-python-scripts
+.PHONY: check-license
+
+# Check python scripts have the correct headers.
 check-python-scripts:
 	@./.github/check_python_scripts.sh
+
+.PHONY: check-python-scripts
+
+# Upload to PyPI servers
+# ------------------------------------------------------------------------
+
+# PYPI_TEST = --repository-url https://test.pypi.org/legacy/
+PYPI_TEST = --repository testpypi
+
+# Check before uploading
+upload-check: build | $(CONDA_ENV_PYTHON)
+	$(IN_CONDA_ENV) twine check dist/*
+
+.PHONY: upload-check
+
+# Upload to test.pypi.org
+upload-test: check | $(CONDA_ENV_PYTHON)
+	$(IN_CONDA_ENV) twine upload ${PYPI_TEST}  dist/*.tar.gz
+	$(IN_CONDA_ENV) twine upload ${PYPI_TEST}  dist/*.whl
+
+.PHONY: upload-test
+
+# Upload to the real pypi.org
+upload: check | $(CONDA_ENV_PYTHON)
+	$(IN_CONDA_ENV) twine upload ${PYPI_TEST}  dist/*.tar.gz
+	$(IN_CONDA_ENV) twine upload ${PYPI_TEST}  dist/*.whl
+
+.PHONY: upload

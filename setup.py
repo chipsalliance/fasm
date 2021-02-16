@@ -9,20 +9,21 @@
 #
 # SPDX-License-Identifier: ISC
 
-import setuptools
 import os
 import re
-import sys
+import setuptools
+import shutil
 import subprocess
+import sys
+import traceback
 
+from Cython.Build import cythonize
+from distutils.command.build import build
 from distutils.version import LooseVersion
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
-from distutils.command.build import build
 from setuptools.command.develop import develop
 from setuptools.command.install import install
-from Cython.Build import cythonize
-import traceback
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -103,6 +104,34 @@ class AntlrCMakeBuild(build_ext):
                 "falling back on slower textX parser. Error:\n", e)
             traceback.print_exc()
 
+    # FIXME: Remove this function - https://github.com/SymbiFlow/fasm/issues/50
+    def add_flags(self):
+        if sys.platform.startswith('win'):
+            return
+
+        for flag in ["CFLAGS", "CXXFLAGS"]:
+            flags = [os.environ.get(flag, "")]
+            if not flags[0]:
+                flags.pop(0)
+
+            if shared_options.antlr_runtime == 'static':
+                # When linking the ANTLR runtime statically, -fPIC is
+                # still necessary because libparse_fasm will be a
+                # shared library.
+                flags.append("-fPIC")
+
+            # FIXME: These should be in the cmake config file?
+            # Disable excessive warnings currently in ANTLR runtime.
+            # warning: type attributes ignored after type is already defined
+            # `class ANTLR4CPP_PUBLIC ATN;`
+            flags.append('-Wno-attributes')
+
+            # Lots of implicit fallthroughs.
+            # flags.append('-Wimplicit-fallthrough=0')
+
+            if flags:
+                os.environ[flag] = " ".join(flags)
+
     def build_extension(self, ext):
         if isinstance(ext, CMakeExtension):
             extdir = os.path.join(
@@ -119,19 +148,19 @@ class AntlrCMakeBuild(build_ext):
             cfg = 'Debug' if self.debug else 'Release'
             build_args = ['--config', cfg]
             cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            build_args += ['--', '-j2']
+            if not sys.platform.startswith('win'):
+                build_args += ['--', '-j']
 
             env = os.environ.copy()
             env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(
                 env.get('CXXFLAGS', ''), self.distribution.get_version())
-            if not os.path.exists(self.build_temp):
-                os.makedirs(self.build_temp)
 
-            # When linking the ANTLR runtime statically, -fPIC is still
-            # necessary because libparse_fasm will be a shared library.
-            if shared_options.antlr_runtime == 'static':
-                for flag in ["CFLAGS", "CXXFLAGS"]:
-                    os.environ[flag] = os.environ.get(flag, "") + " -fPIC"
+            # Remove the existing build_temp directory if it already exists.
+            if os.path.exists(self.build_temp):
+                shutil.rmtree(self.build_temp, ignore_errors=True)
+            os.makedirs(self.build_temp, exist_ok=True)
+
+            self.add_flags()
 
             subprocess.check_call(
                 ['cmake', ext.sourcedir] + cmake_args,
@@ -217,7 +246,7 @@ setuptools.setup(
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: ISC License",
+        "License :: OSI Approved :: ISC License (ISCL)",
         "Operating System :: OS Independent",
     ],
     entry_points={

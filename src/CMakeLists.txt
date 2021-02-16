@@ -14,6 +14,13 @@ project(parse_fasm)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/antlr4/runtime/Cpp/cmake)
 
 set(CMAKE_CXX_STANDARD 11)
+if (MSVC_VERSION GREATER_EQUAL "1900")
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("/std:c++latest" _cpp_latest_flag_supported)
+    if (_cpp_latest_flag_supported)
+        add_compile_options("/std:c++latest")
+    endif()
+endif()
 
 if(ANTLR_RUNTIME_TYPE STREQUAL "static")
   # Required if linking to static library
@@ -81,7 +88,7 @@ add_library(parse_fasm SHARED ParseFasm.cpp
   ${ANTLR_FasmLexer_CXX_OUTPUTS}
   ${ANTLR_FasmParser_CXX_OUTPUTS})
 target_link_libraries(parse_fasm ${ANTLR4_RUNTIME})
-target_compile_options(parse_fasm PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
+#target_compile_options(parse_fasm PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
 
 add_executable(parse_fasm_tests
   ParseFasmTests.cpp
@@ -89,7 +96,7 @@ add_executable(parse_fasm_tests
   ${ANTLR_FasmParser_CXX_OUTPUTS})
 target_link_libraries(parse_fasm_tests ${ANTLR4_RUNTIME})
 target_link_libraries(parse_fasm_tests gtest_main)
-target_compile_options(parse_fasm_tests PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
+#target_compile_options(parse_fasm_tests PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
 
 # Standalone executable
 add_executable(parse_fasm_run EXCLUDE_FROM_ALL
@@ -98,7 +105,7 @@ add_executable(parse_fasm_run EXCLUDE_FROM_ALL
   ${ANTLR_FasmParser_CXX_OUTPUTS})
 target_link_libraries(parse_fasm_run ${ANTLR4_RUNTIME})
 set_target_properties(parse_fasm_run PROPERTIES OUTPUT_NAME parse_fasm)
-target_compile_options(parse_fasm_run PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
+#target_compile_options(parse_fasm_run PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
 
 # Unit tests
 include(CTest)
