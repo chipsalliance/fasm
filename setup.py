@@ -25,8 +25,23 @@ from setuptools.command.build_ext import build_ext
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 
+__dir__ = os.path.dirname(os.path.abspath(__file__))
+
+# Read in the description
 with open("README.md", "r") as fh:
     long_description = fh.read()
+
+# Read in the version information
+FASM_VERSION_FILE = os.path.join(__dir__, 'fasm', 'version.py')
+with open(FASM_VERSION_FILE) as f:
+    version_line = [
+        v.strip() for v in f.readlines() if v.startswith('version_str')
+    ]
+assert len(version_line) == 1, version_line
+version_value = version_line[0].split(' = ', 1)[-1]
+assert version_value[0] == '"', version_value
+assert version_value[-1] == '"', version_value
+version = version_value[1:-1]
 
 
 # Based on: https://www.benjack.io/2018/02/02/python-cpp-revisited.html
@@ -234,7 +249,7 @@ class DevelopCommand(develop):
 
 setuptools.setup(
     name="fasm",
-    version="0.0.2",
+    version=version,
     author="SymbiFlow Authors",
     author_email="symbiflow@lists.librecores.org",
     description="FPGA Assembly (FASM) Parser and Generation library",
