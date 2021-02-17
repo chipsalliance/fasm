@@ -64,10 +64,14 @@ jobs:
   Linux:
     strategy:
       matrix:
-        python-version: [ 'cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39' ]
+        include:
+          - { name: '3.6', python-version: 'cp36-cp36m' }
+          - { name: '3.7', python-version: 'cp37-cp37m' }
+          - { name: '3.8', python-version: 'cp38-cp38' }
+          - { name: '3.9', python-version: 'cp39-cp39' }
       fail-fast: false
 
-    name: ${{ matrix.python-version }} • manylinux
+    name: '${{ matrix.name }} • manylinux'
     runs-on: ubuntu-latest
 
     steps:
@@ -137,8 +141,8 @@ jobs:
   MacAndWindows:
     strategy:
       matrix:
-        python-version: [ '3.6', '3.7', '3.8', '3.9', 'pypy-3.6', 'pypy-3.7' ]
         os: [windows-latest, macos-latest]
+        python-version: [ '3.6', '3.7', '3.8', '3.9', 'pypy-3.6', 'pypy-3.7' ]
       fail-fast: false
 
     name: ${{ matrix.python-version }} • ${{ matrix.os }}
