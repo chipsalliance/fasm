@@ -103,12 +103,15 @@ jobs:
 
     - name: List distribution 📦
       run: |
-        set -x
+        # Fix permissions
+        echo "::group::Fixing permission"
         ls -l dist/*
         echo $USER
         whoami
         sudo chown -R $USER dist
         ls -l dist/*
+        echo "::endgroup::"
+        # Remove the non-manylinux versions
         rm -v dist/*linux_x86_64*.whl
         ls -l dist/*
 
@@ -193,6 +196,7 @@ jobs:
     - name: Check distribution 📦
       run: |
         python -m zipfile -l dist/*
+        echo
         twine check dist/*
 
     - name: 📤 Publish wheels to Test PyPI
