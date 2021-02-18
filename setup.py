@@ -17,13 +17,13 @@ import subprocess
 import sys
 import traceback
 
-from Cython.Build import cythonize
 from distutils.command.build import build
 from distutils.version import LooseVersion
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
 from setuptools.command.develop import develop
 from setuptools.command.install import install
+from setuptools.command.sdist import sdist
 
 __dir__ = os.path.dirname(os.path.abspath(__file__))
 
@@ -248,7 +248,15 @@ class DevelopCommand(develop):
         super().run()
 
 
+class SdistCommand(sdist):
+    def run(self):
+        from Cython.Build import cythonize
+        cythonize("fasm/parser/antlr_to_tuple.pyx")
+        super().run()
+
+
 setuptools.setup(
+    # Package human readable information
     name="fasm",
     version=version,
     author="SymbiFlow Authors",
@@ -257,24 +265,40 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/SymbiFlow/fasm",
-    packages=setuptools.find_packages(exclude=('tests*', )),
-    install_requires=['textx'],
-    include_package_data=True,
+    license="ISC",
+    license_files=["LICENSE"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: ISC License (ISCL)",
         "Operating System :: OS Independent",
     ],
+    # Package contents control
+    packages=setuptools.find_packages(exclude=['tests*']),
+    include_package_data=True,
     entry_points={
         'console_scripts': ['fasm=fasm.tool:main'],
     },
+    # Requirements
+    python_requires=">=3.6",
+    setup_requires=[  # WARNING: Must be kept in sync with pyproject.toml
+        "cython",
+        "setuptools>=42",
+        "wheel",
+    ],
+    install_requires=[
+        'textx',
+    ],
+    # C extension building
     ext_modules=[
-        CMakeExtension('parse_fasm', sourcedir='src', prefix='fasm/parser')
-    ] + cythonize("fasm/parser/antlr_to_tuple.pyx"),
+        CMakeExtension('parse_fasm', sourcedir='src', prefix='fasm/parser'),
+        Extension(
+            "fasm.parser.antlr_to_tuple", ['fasm/parser/antlr_to_tuple.c']),
+    ],
     cmdclass={
         'build_ext': AntlrCMakeBuild,
         'build': BuildCommand,
         'develop': DevelopCommand,
         'install': InstallCommand,
+        'sdist': SdistCommand,
     },
 )

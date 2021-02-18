@@ -35,7 +35,11 @@ setup.py: fasm/version.py
 # Build/install into the conda environment.
 # ------------------------------------------------------------------------
 build-clean:
-	rm -rf dist fasm.egg-info
+	rm -rf build dist fasm.egg-info
+	rm -f fasm/parser/antlr_to_tuple.c
+	rm -f fasm/parser/*.so
+
+clean:: build-clean
 
 .PHONY: build-clean
 
