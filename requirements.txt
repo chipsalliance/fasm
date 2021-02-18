@@ -1,9 +1,13 @@
-check-manifest
+# Required for fasm tooling
 cython
+setuptools>=42
+setuptools_scm[toml]>=3.4
+textx
+wheel
+# Testing
+check-manifest
 flake8
 pytest
-textx
 tox
 twine
-wheel
 yapf==0.24.0

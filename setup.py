@@ -31,6 +31,7 @@ __dir__ = os.path.dirname(os.path.abspath(__file__))
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
 # Read in the version information
 FASM_VERSION_FILE = os.path.join(__dir__, 'fasm', 'version.py')
 with open(FASM_VERSION_FILE) as f:
@@ -253,6 +254,7 @@ class DevelopCommand(develop):
 
 
 setuptools.setup(
+    # Package human readable information
     name="fasm",
     version=version,
     author="SymbiFlow Authors",
@@ -261,17 +263,28 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/SymbiFlow/fasm",
-    packages=setuptools.find_packages(exclude=('tests*', )),
-    install_requires=['textx'],
-    include_package_data=True,
+    license="ISC",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: ISC License (ISCL)",
         "Operating System :: OS Independent",
     ],
+    # Package contents control
+    packages=setuptools.find_packages(exclude=['tests*']),
+    include_package_data=True,
     entry_points={
         'console_scripts': ['fasm=fasm.tool:main'],
     },
+    # Requirements
+    python_requires="~=3.6",
+    setup_requires=[
+        "wheel",
+        "setuptools",
+    ],
+    install_requires=[
+        'textx',
+    ],
+    # C extension building
     ext_modules=[
         CMakeExtension('parse_fasm', sourcedir='src', prefix='fasm/parser')
     ] + cythonize("fasm/parser/antlr_to_tuple.pyx"),
