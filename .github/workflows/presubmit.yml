@@ -9,6 +9,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          # Always clone the full depth so git-describe works.
+          fetch-depth: 0
           submodules: true
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -48,9 +50,12 @@ jobs:
             TOXENV: py38
           - python-version: 3.9
             TOXENV: py39
+      fail-fast: false
     steps:
       - uses: actions/checkout@v2
         with:
+          # Always clone the full depth so git-describe works.
+          fetch-depth: 0
           submodules: true
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -62,5 +67,6 @@ jobs:
           sudo apt install cmake default-jre-headless uuid-dev libantlr4-runtime-dev
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          python update_version.py
       - name: Tox
         run: ANTLR4_RUNTIME_TYPE=${{ matrix.antlr_runtime_type }} tox -e ${{ matrix.TOXENV }}

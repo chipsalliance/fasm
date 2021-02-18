@@ -43,6 +43,7 @@ include src/antlr/*
 # Excludes
 global-exclude .git
 exclude .gitmodules
+exclude update_version.py
 prune third_party
 prune .github
 prune __pycache__

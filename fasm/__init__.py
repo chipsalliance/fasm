@@ -10,8 +10,18 @@
 # SPDX-License-Identifier: ISC
 
 from __future__ import print_function
+
+import os.path
+
 from fasm.model import ValueFormat, SetFasmFeature, Annotation, FasmLine
 from fasm.parser import parse_fasm_filename, parse_fasm_string
+
+try:
+    from fasm.version import version_str
+except ImportError:
+    version_str = "UNKNOWN"
+__dir__ = os.path.split(os.path.abspath(os.path.realpath(__file__)))[0]
+__version__ = version_str
 
 
 def fasm_value_to_str(value, width, value_format):

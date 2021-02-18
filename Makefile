@@ -24,36 +24,47 @@ $(TOP_DIR)/third_party/make-env/conda.mk: $(TOP_DIR)/.gitmodules
 
 -include $(TOP_DIR)/third_party/make-env/conda.mk
 
+# Update the version file
+# ------------------------------------------------------------------------
+fasm/version.py: update_version.py | $(CONDA_ENV_PYTHON)
+	$(IN_CONDA_ENV) python ./update_version.py
+
+setup.py: fasm/version.py
+	touch setup.py --reference fasm/version.py
+
+# Build/install into the conda environment.
+# ------------------------------------------------------------------------
 build-clean:
 	rm -rf dist fasm.egg-info
 
 .PHONY: build-clean
 
-build: | $(CONDA_ENV_PYTHON)
+build: setup.py | $(CONDA_ENV_PYTHON)
 	make build-clean
 	$(IN_CONDA_ENV) python setup.py sdist bdist_wheel
 
 .PHONY: build
 
 # Install into environment
-install: | $(CONDA_ENV_PYTHON)
+install: setup.py | $(CONDA_ENV_PYTHON)
 	$(IN_CONDA_ENV) python setup.py develop
 
 .PHONY: install
 
+
 # Build/install locally rather than inside the environment.
 # ------------------------------------------------------------------------
-local-build:
+local-build: setup.py
 	python setup.py build
 
 .PHONY: local-build
 
-local-build-shared:
+local-build-shared: setup.py
 	python setup.py build --antlr-runtime=shared
 
 .PHONY: local-build-shared
 
-local-install:
+local-install: setup.py
 	python setup.py install
 
 .PHONY: local-install
@@ -63,7 +74,7 @@ local-install:
 # ------------------------------------------------------------------------
 
 # Run the tests
-test: | $(CONDA_ENV_PYTHON)
+test: fasm/version.py | $(CONDA_ENV_PYTHON)
 	$(IN_CONDA_ENV) py.test -s tests
 
 .PHONY: test
@@ -105,7 +116,7 @@ format: format-py format-cpp
 	true
 
 # Check - ???
-check: | $(CONDA_ENV_PYTHON)
+check: setup.py | $(CONDA_ENV_PYTHON)
 	$(IN_CONDA_ENV) python setup.py check -m -s
 
 .PHONY: check
