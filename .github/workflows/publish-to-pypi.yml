@@ -55,13 +55,13 @@ jobs:
       run: |
         twine upload --skip-existing --verbose --repository testpypi dist/*.tar.gz
 
-#    - name: 📤 Publish source to PyPI
-#      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
-#      env:
-#        TWINE_USERNAME: __token__
-#        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-#      run: |
-#        twine upload dist/*.tar.gz
+    - name: 📤 Publish source to PyPI
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        twine upload dist/*
 
   Linux:
     strategy:
@@ -138,13 +138,13 @@ jobs:
       run: |
         twine upload --skip-existing --verbose --repository testpypi dist/*.whl
 
-#    - name: 📤 Publish wheels to PyPI
-#      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
-#      env:
-#        TWINE_USERNAME: __token__
-#        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-#      run: |
-#        twine upload dist/*.whl
+    - name: 📤 Publish wheels to PyPI
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        twine upload dist/*.whl
 
   MacAndWindows:
     strategy:
@@ -208,10 +208,10 @@ jobs:
       run: |
         twine upload --skip-existing --verbose --repository testpypi dist/*.whl
 
-#    - name: 📤 Publish wheels to PyPI
-#      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
-#      env:
-#        TWINE_USERNAME: __token__
-#        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-#      run: |
-#        twine upload dist/*.whl
+    - name: 📤 Publish wheels to PyPI
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        twine upload dist/*.whl
