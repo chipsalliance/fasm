@@ -270,7 +270,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     entry_points={
-        'console_scripts': ['fasm=fasm:main'],
+        'console_scripts': ['fasm=fasm.tool:main'],
     },
     ext_modules=[
         CMakeExtension('parse_fasm', sourcedir='src', prefix='fasm/parser')
