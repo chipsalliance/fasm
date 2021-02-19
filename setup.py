@@ -34,9 +34,14 @@ with open("README.md", "r") as fh:
 # Read in the version information
 FASM_VERSION_FILE = os.path.join(__dir__, 'fasm', 'version.py')
 with open(FASM_VERSION_FILE) as f:
-    version_line = [
-        v.strip() for v in f.readlines() if v.startswith('version_str')
-    ]
+    if 'UNKNOWN' in f.read():
+        print(
+            "Running update_version.py to generate {}".format(
+                FASM_VERSION_FILE))
+        subprocess.check_call(['python', 'update_version.py'], cwd=__dir__)
+with open(FASM_VERSION_FILE) as f:
+    lines = f.readlines()
+    version_line = [v.strip() for v in lines if v.startswith('version_str')]
 assert len(version_line) == 1, version_line
 version_value = version_line[0].split(' = ', 1)[-1]
 assert version_value[0] == '"', version_value
