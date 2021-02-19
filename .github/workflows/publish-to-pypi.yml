@@ -55,13 +55,13 @@ jobs:
       run: |
         twine upload --skip-existing --verbose --repository testpypi dist/*.tar.gz
 
-#    - name: 📤 Publish source to PyPI
-#      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
-#      env:
-#        TWINE_USERNAME: __token__
-#        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-#      run: |
-#        twine upload dist/*.tar.gz
+    - name: 📤 Publish source to PyPI
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        twine upload dist/*
 
   Linux:
     strategy:
@@ -103,12 +103,15 @@ jobs:
 
     - name: List distribution 📦
       run: |
-        set -x
+        # Fix permissions
+        echo "::group::Fixing permission"
         ls -l dist/*
         echo $USER
         whoami
         sudo chown -R $USER dist
         ls -l dist/*
+        echo "::endgroup::"
+        # Remove the non-manylinux versions
         rm -v dist/*linux_x86_64*.whl
         ls -l dist/*
 
@@ -135,13 +138,13 @@ jobs:
       run: |
         twine upload --skip-existing --verbose --repository testpypi dist/*.whl
 
-#    - name: 📤 Publish wheels to PyPI
-#      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
-#      env:
-#        TWINE_USERNAME: __token__
-#        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-#      run: |
-#        twine upload dist/*.whl
+    - name: 📤 Publish wheels to PyPI
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        twine upload dist/*.whl
 
   MacAndWindows:
     strategy:
@@ -191,8 +194,10 @@ jobs:
         python setup.py bdist_wheel
 
     - name: Check distribution 📦
+      shell: bash
       run: |
         python -m zipfile -l dist/*
+        echo
         twine check dist/*
 
     - name: 📤 Publish wheels to Test PyPI
@@ -203,10 +208,10 @@ jobs:
       run: |
         twine upload --skip-existing --verbose --repository testpypi dist/*.whl
 
-#    - name: 📤 Publish wheels to PyPI
-#      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
-#      env:
-#        TWINE_USERNAME: __token__
-#        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-#      run: |
-#        twine upload dist/*.whl
+    - name: 📤 Publish wheels to PyPI
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        twine upload dist/*.whl
