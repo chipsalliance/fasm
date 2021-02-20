@@ -4,8 +4,6 @@ import platform
 import subprocess
 import sys
 
-from packaging import version
-
 VERSION_FILE = 'fasm/version.py'
 VERSION_FILE_TEMPLATE = '''\
 #!/usr/bin/env python3
@@ -73,38 +71,47 @@ def get_msg():
     return '\n'.join(line.rstrip() for line in data.split('\n'))
 
 
-def create_version(git_describe):
+def create_version_tuple(git_describe):
     """
     >>> t = '''\\
     ... v0.0
     ... v0.0.0
-    ... v0.0.0-rc1
     ... v1.0.1-265-g5f0c7a7
     ... v0.0-7004-g1cf70ea2
     ... '''
     >>> for d in t.splitlines():
-    ...     v = create_version(d)
-    ...     print((v, create_version_tuple(v)))
-    (<Version('0.0')>, (0, 0, None))
-    (<Version('0.0.0')>, (0, 0, 0, None))
-    (<Version('0.0.0rc1')>, (0, 0, 0, None))
-    (<Version('1.0.1.post265')>, (1, 0, 1, 265))
-    (<Version('0.0.post7004')>, (0, 0, 7004))
+    ...     v = create_version_tuple(d)
+    ...     print((create_version_str(v), v))
+    ('0.0', (0, 0, None))
+    ('0.0.0', (0, 0, 0, None))
+    ('1.0.1.post265', (1, 0, 1, 265))
+    ('0.0.post7004', (0, 0, 7004))
     """
     vtag = git_describe.strip()
     if vtag.startswith('v'):
         vtag = vtag[1:]
-    dashg = vtag.find('-g')
-    if dashg != -1:
-        vtag = vtag[:dashg]
-    return version.parse(vtag)
+
+    vbits = vtag.split('.')
+    vpost = [None]
+    if '-' in vbits[-1]:
+        vend = vbits.pop(-1).split('-')
+        assert len(vend) == 3, (vtag, vbits, vend)
+        assert len(vend[0]) > 0, (vtag, vbits, vend)
+        vbits.append(vend.pop(0))
+        vpost = [int(vend.pop(0))]
+        assert vend[-1].startswith('g'), (vtag, vbits, vend, vpost)
+    vbits = [int(i) for i in vbits]
+    vbits.extend(vpost)
+    return tuple(vbits)
 
 
-def create_version_tuple(vdesc):
-    assert isinstance(vdesc, version.Version), (vdesc, type(vdesc))
-    return tuple(list(vdesc.release) + [
-        vdesc.post,
-    ])
+def create_version_str(version_tuple):
+    vbits = [str(i) for i in version_tuple]
+    if version_tuple[-1] is None:
+        vbits.pop(-1)
+    else:
+        vbits[-1] = 'post' + vbits[-1]
+    return '.'.join(vbits)
 
 
 def update_version_py(args):
@@ -128,8 +135,8 @@ def main(args):
     git_describe = get_describe()
     git_msg = get_msg()
 
-    version = create_version(git_describe)
-    version_tuple = create_version_tuple(version)
+    version_tuple = create_version_tuple(git_describe)
+    version = create_version_str(version_tuple)
 
     update_version_py(locals())
 
