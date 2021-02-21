@@ -17,31 +17,30 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Install dependencies (Ubuntu)
-      if: startsWith(matrix.os, 'ubuntu')
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
-
-    - name: Install dependencies (Mac OS X)
-      if: startsWith(matrix.os, 'macos')
-      run: |
-        true
-
-    - name: Install dependencies (Windows)
-      if: startsWith(matrix.os, 'windows')
-      run: |
-        true
-
     - name: 🐍 Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: 3.x
 
-    - name: Install pip+wheel
+    - name: Install pip
       run: |
-        pip install --upgrade wheel
         pip install --upgrade pip
+
+    - name: Install package's system dependencies (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu')
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+
+    - name: Install package's system dependencies (Mac OS X)
+      if: startsWith(matrix.os, 'macos')
+      run: |
+        true
+
+    - name: Install package's system dependencies (Windows)
+      if: startsWith(matrix.os, 'windows')
+      run: |
+        true
 
     - name: Test installation
       shell: bash
@@ -51,7 +50,3 @@ jobs:
     - name: Run Smoke Test
       run: |
         fasm --help
-
-#  PyPi:
-#    runs-on: ubuntu-20.04
-#    name: PyPi
