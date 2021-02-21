@@ -1,0 +1,36 @@
+name: Functionality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+
+  Functionality:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        antlr_runtime_type: [static, shared]
+        include:
+          - { python-version: 3.5, TOXENV: py35 }
+          - { python-version: 3.6, TOXENV: py36 }
+          - { python-version: 3.7, TOXENV: py37 }
+          - { python-version: 3.8, TOXENV: py38 }
+          - { python-version: 3.9, TOXENV: py39 }
+      fail-fast: false
+
+    name: Functionality on Python ${{ matrix.python-version }} (with ${{ matrix.antlr_runtime_type}} antlr)
+
+    steps:
+    - run: |
+        echo "${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}"
+
+    - uses: mithro/fasm/.github/workflows/system-setup@setupcfg
+      with:
+        development-tools: true
+        python-version: ${{ matrix.python-version }}
+
+    - name: Run Tests
+      run: |
+        ANTLR4_RUNTIME_TYPE=${{ matrix.antlr_runtime_type }} tox -e ${{ matrix.TOXENV }}

@@ -1,0 +1,31 @@
+name: Style
+
+on:
+  push:
+  pull_request:
+
+jobs:
+
+  Style:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: '${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}'
+      with:
+        development-tools: true
+
+    - name: Check license headers
+      run: make check-license
+
+    - name: Python style check
+      run: |
+        make format lint
+        test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }
+
+    - name: Python script checks
+      run: make check-python-scripts
+
+    - name: C++ style check
+      run: |
+        make format-cpp
+        test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }

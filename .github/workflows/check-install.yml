@@ -10,43 +10,106 @@ jobs:
   GitHub:
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-20.04]
+        os: [windows-latest, macos-latest, ubuntu-latest]
       fail-fast: false
 
-    name: GitHub
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: 🐍 Set up Python
-      uses: actions/setup-python@v2
+    - uses: '${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}'
       with:
-        python-version: 3.x
-
-    - name: Install pip
-      run: |
-        pip install --upgrade pip
-
-    - name: Install package's system dependencies (Ubuntu)
-      if: startsWith(matrix.os, 'ubuntu')
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
-
-    - name: Install package's system dependencies (Mac OS X)
-      if: startsWith(matrix.os, 'macos')
-      run: |
-        true
-
-    - name: Install package's system dependencies (Windows)
-      if: startsWith(matrix.os, 'windows')
-      run: |
-        true
+        os: ${{ matrix.os }}
+        git-checkout: false
 
     - name: Test installation
       shell: bash
       run: |
         pip install git+https://github.com/${GITHUB_REPOSITORY}.git@${GITHUB_SHA}#egg=fasm
 
-    - name: Run Smoke Test
+    - name: Run smoke test
       run: |
         fasm --help
+
+#    - name: Run tests against installed version
+#      run: |
+#        cd tests; python test_simple.py
+
+  Checkout:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        cmd:
+          - python setup.py install
+          - pip install .
+          - pip install -e .    # Editable install
+      fail-fast: false
+
+    name: Checkout with '${{ matrix.cmd }}'
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: '${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}'
+      with:
+        os: ${{ matrix.os }}
+
+    - name: Install using '${{ matrix.cmd }}'
+      run: |
+        ${{ matrix.cmd }}
+
+    - name: Run smoke test
+      run: |
+        fasm --help
+
+    - name: Run tests against installed version
+      run: |
+        cd tests; python test_simple.py
+
+  Wheel:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: '${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}'
+      with:
+        os: ${{ matrix.os }}
+
+    - name: Build wheel
+      run: |
+        python setup.py bdist_wheel
+
+    - name: Upload wheel
+      uses: actions/upload-artifact@v2
+      with:
+        name: fasm
+        path: dist
+
+    - name: Install wheel
+      run: |
+        pip install dist/*.whl
+
+    - name: Run smoke test
+      run: |
+        fasm --help
+
+    - name: Run tests against installed version
+      run: |
+        cd tests; python test_simple.py
+
+  make-env:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    name: make-env (Conda)
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: '${{ github.repository }}/.github/workflows/checkout@${{ github.sha }}'
+
+    - name: Run tests
+      run: |
+        make tests
