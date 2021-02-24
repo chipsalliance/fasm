@@ -1,0 +1,115 @@
+# Copyright (C) 2017-2021  The SymbiFlow Authors.
+#
+# Use of this source code is governed by a ISC-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/ISC
+#
+# SPDX-License-Identifier: ISC
+
+name: PyPI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+
+  Source:
+    name: Source
+    runs-on: ubuntu-20.04
+
+    steps:
+    - includes: /system-setup
+      with:
+        packaging-tools: true
+
+    - name: Install package
+      run: |
+        pip install -e .
+
+    - name: 🚧 Build distribution 📦
+      run: |
+        python -m build --sdist .
+
+    - includes: /upload-to-pypi
+      with:
+        root_repo: SymbiFlow/fasm
+        type: source
+
+  Linux:
+    strategy:
+      matrix:
+        include:
+          - { python-version: '3.6', manylinux-python: 'cp36-cp36m' }
+          - { python-version: '3.7', manylinux-python: 'cp37-cp37m' }
+          - { python-version: '3.8', manylinux-python: 'cp38-cp38' }
+          - { python-version: '3.9', manylinux-python: 'cp39-cp39' }
+      fail-fast: false
+
+    name: '${{ matrix.python-version }} • manylinux'
+    runs-on: ubuntu-latest
+
+    steps:
+    - includes: /system-setup
+      with:
+        python-version: ${{ matrix.python-version }}
+        system-dependencies: false
+        packaging-tools: true
+
+    - name: 🚧 Build distribution 📦
+      uses: RalfG/python-wheels-manylinux-build@v0.3.3-manylinux2010_x86_64
+      with:
+        build-requirements: 'cython'
+        pre-build-command: 'bash .github/workflows/manylinux-install-cmake.sh'
+        python-versions: ${{ matrix.manylinux-python }}
+        #pip-wheel-args: '-w ./dist --no-deps --verbose'
+
+    - name: List distribution 📦
+      run: |
+        # Fix permissions
+        echo "::group::Fixing permission"
+        ls -l dist/*
+        echo $USER
+        whoami
+        sudo chown -R $USER dist
+        ls -l dist/*
+        echo "::endgroup::"
+        # Remove the non-manylinux versions
+        rm -v dist/*linux_x86_64*.whl
+        ls -l dist/*
+
+    - includes: /upload-to-pypi
+      with:
+        root_repo: SymbiFlow/fasm
+        type: wheels
+
+  MacAndWindows:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+        python-version: [ '3.6', '3.7', '3.8', '3.9', 'pypy-3.6', 'pypy-3.7' ]
+      fail-fast: false
+
+    name: ${{ matrix.python-version }} • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - includes: /system-setup
+      with:
+        os: ${{ matrix.os }}
+        python-version: ${{ matrix.python-version }}
+        packaging-tools: true
+
+    - name: Install package
+      run: |
+        pip install -e .
+
+    - name: 🚧 Build distribution 📦
+      run: |
+        python setup.py bdist_wheel
+
+    - includes: /upload-to-pypi
+      with:
+        root_repo: SymbiFlow/fasm
+        type: wheels

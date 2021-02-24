@@ -55,6 +55,13 @@ install: setup.py | $(CONDA_ENV_PYTHON)
 
 .PHONY: install
 
+# Info about the environment
+info:
+	@make --no-print-directory env-info
+	@echo
+	@$(IN_CONDA_ENV) python -W ignore .github/actions/download-and-run-tests/fasm-version.py
+
+.PHONY: info
 
 # Build/install locally rather than inside the environment.
 # ------------------------------------------------------------------------
@@ -119,6 +126,17 @@ format-cpp:
 	$(call with_cpp_files, clang-format -style=file -i)
 
 .PHONY: format-cpp
+
+# Format the GitHub workflow files
+GHA_WORKFLOW_SRCS = $(wildcard .github/workflows-src/*.yml)
+GHA_WORKFLOW_OUTS = $(addprefix .github/workflows/,$(notdir $(GHA_WORKFLOW_SRCS)))
+
+.github/workflows/%.yml: .github/workflows-src/%.yml $(CONDA_ENV_PYTHON)
+	$(IN_CONDA_ENV) python -m actions_includes $< $@
+
+format-gha: $(GHA_WORKFLOW_OUTS)
+	echo $(GHA_WORKFLOW_OUTS)
+	@true
 
 # Format all the files!
 format: format-py format-cpp

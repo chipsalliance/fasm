@@ -1,3 +1,11 @@
+# Copyright (C) 2021  The SymbiFlow Authors.
+#
+# Use of this source code is governed by a ISC-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/ISC
+#
+# SPDX-License-Identifier: ISC
+
 name: "Setup system for package"
 description: "Set up system with Python environment and dependencies ready for the package."
 inputs:
@@ -27,13 +35,13 @@ inputs:
     default: false
 
 runs:
-  using: "composite"
+  using: "includes"
 
   steps:
   - name: 🐍 Set up Python ${{ matrix.python-version }}
     uses: actions/setup-python@v2
     with:
-      python-version: ${{ input.python-version }}
+      python-version: ${{ inputs.python-version }}
 
   - name: Install latest pip
     run: |
@@ -58,28 +66,28 @@ runs:
   - name: Install packaging tooling
     if: inputs.packaging-tools
     run: |
-      pip install twine auditwheel
+      pip install twine auditwheel build
 
-  - uses: ./.github/workflows/checkout
+  - includes: /checkout
     if: inputs.git-checkout
 
-  - name: Install development system dependencies (Ubuntu)
+  - name: Install developer tooling's system dependencies (Ubuntu)
     if: inputs.development-tools && startsWith(inputs.os, 'ubuntu')
     run: |
       sudo apt-get update
       sudo apt-get install -y clang-format
 
-  - name: Install development system dependencies (Mac OS X)
+  - name: Install developer tooling's system dependencies (Mac OS X)
     if: inputs.development-tools && startsWith(inputs.os, 'macos')
     run: |
       true
 
-  - name: Install development system dependencies (Windows)
+  - name: Install developer tooling's system dependencies (Windows)
     if: inputs.development-tools && startsWith(inputs.os, 'windows')
     run: |
       true
 
-  - name: Install development tooling
+  - name: Install development tools
     if: inputs.development-tools
     run: |
       pip install -r requirements.txt

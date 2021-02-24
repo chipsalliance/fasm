@@ -11,3 +11,5 @@ pytest
 tox
 twine
 yapf==0.24.0
+# CI expansion
+git+https://github.com/mithro/actions-includes.git#egg=actions-includes

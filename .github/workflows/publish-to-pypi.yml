@@ -1,89 +1,59 @@
-name: PyPI
+# Copyright (C) 2017-2021  The SymbiFlow Authors.
+#
+# Use of this source code is governed by a ISC-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/ISC
+#
+# SPDX-License-Identifier: ISC
+
+# !! WARNING !!
+# Do not modify this file directly!
+# !! WARNING !!
+#
+# It is generated from: ../workflows-src/publish-to-pypi.yml
+# using the script from https://github.com/mithro/actions-includes@main
 
 on:
   push:
   pull_request:
   workflow_dispatch:
-
+name: PyPI
 jobs:
-
   Source:
     name: Source
-
+    runs-on: ubuntu-20.04
     steps:
-    - uses: '${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}'
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
       with:
-        packaging-tools: true
-
+        workflow: .github/workflows/publish-to-pypi.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    - name: Install latest pip
+      run: |
+        pip install -U pip
+    - name: Install package's system dependencies (Ubuntu)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+    - name: Install packaging tooling
+      run: |
+        pip install twine auditwheel build
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
     - name: Install package
       run: |
         pip install -e .
-
     - name: 🚧 Build distribution 📦
       run: |
-        python setup.py sdist
-
-    - name: Check distribution 📦
-      run: |
-        twine check dist/*
-
-    - name: 📤 Publish source to Test PyPI
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_TEST_PASSWORD }}
-      if: env.TWINE_PASSWORD != null
-      run: |
-        twine upload --skip-existing --verbose --repository testpypi dist/*.tar.gz
-
-    - name: 📤 Publish source to PyPI
-      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: |
-        twine upload dist/*
-
-  Linux:
-    strategy:
-      matrix:
-        include:
-          - { python-version: '3.6', manylinux-python: 'cp36-cp36m' }
-          - { python-version: '3.7', manylinux-python: 'cp37-cp37m' }
-          - { python-version: '3.8', manylinux-python: 'cp38-cp38' }
-          - { python-version: '3.9', manylinux-python: 'cp39-cp39' }
-      fail-fast: false
-
-    name: '${{ matrix.name }} • manylinux'
-
-    steps:
-    - uses: '${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}'
-      with:
-        python-version: ${{ matrix.python-version }}
-        packaging-tools: true
-
-    - name: 🚧 Build distribution 📦
-      uses: RalfG/python-wheels-manylinux-build@v0.3.3-manylinux2010_x86_64
-      with:
-        build-requirements: 'cython'
-        pre-build-command: 'bash .github/workflows/manylinux-install-cmake.sh'
-        python-versions: ${{ matrix.manylinux-python }}
-        #pip-wheel-args: '-w ./dist --no-deps --verbose'
-
-    - name: List distribution 📦
-      run: |
-        # Fix permissions
-        echo "::group::Fixing permission"
-        ls -l dist/*
-        echo $USER
-        whoami
-        sudo chown -R $USER dist
-        ls -l dist/*
-        echo "::endgroup::"
-        # Remove the non-manylinux versions
-        rm -v dist/*linux_x86_64*.whl
-        ls -l dist/*
-
-    - name: Check distribution 📦
+        python -m build --sdist .
+    - name: ✔︎ Check 📦
       run: |
         for WHEEL in dist/*.whl; do
           echo
@@ -97,67 +67,184 @@ jobs:
           echo
           echo "::endgroup::"
         done
-
-    - name: 📤 Publish wheels to Test PyPI
+    - name: 📤 Publish source to Test PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_TEST_PASSWORD }}
-      if: env.TWINE_PASSWORD != null
+      if: ${{ env.TWINE_PASSWORD != null }}
       run: |
-        twine upload --skip-existing --verbose --repository testpypi dist/*.whl
-
-    - name: 📤 Publish wheels to PyPI
-      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
+        twine upload --skip-existing --verbose --repository testpypi dist/*
+    - name: 📤 Publish source to PyPI
+      if: ${{ github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm' && env.TWINE_PASSWORD != null }}
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        twine upload dist/*.whl
-
+        twine upload dist/*
+  Linux:
+    strategy:
+      matrix:
+        include:
+        - python-version: '3.6'
+          manylinux-python: cp36-cp36m
+        - python-version: '3.7'
+          manylinux-python: cp37-cp37m
+        - python-version: '3.8'
+          manylinux-python: cp38-cp38
+        - python-version: '3.9'
+          manylinux-python: cp39-cp39
+      fail-fast: false
+    name: ${{ matrix.python-version }} • manylinux
+    runs-on: ubuntu-latest
+    steps:
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
+      with:
+        workflow: .github/workflows/publish-to-pypi.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install latest pip
+      run: |
+        pip install -U pip
+    - name: Install packaging tooling
+      run: |
+        pip install twine auditwheel build
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
+    - name: 🚧 Build distribution 📦
+      uses: RalfG/python-wheels-manylinux-build@v0.3.3-manylinux2010_x86_64
+      with:
+        build-requirements: cython
+        pre-build-command: bash .github/workflows/manylinux-install-cmake.sh
+        python-versions: ${{ matrix.manylinux-python }}
+    - name: List distribution 📦
+      run: |
+        # Fix permissions
+        echo "::group::Fixing permission"
+        ls -l dist/*
+        echo $USER
+        whoami
+        sudo chown -R $USER dist
+        ls -l dist/*
+        echo "::endgroup::"
+        # Remove the non-manylinux versions
+        rm -v dist/*linux_x86_64*.whl
+        ls -l dist/*
+    - name: ✔︎ Check 📦
+      run: |
+        for WHEEL in dist/*.whl; do
+          echo
+          echo "::group::Checking $WHEEL"
+          echo
+          python -m zipfile --list $WHEEL
+          echo
+          auditwheel show $WHEEL
+          echo
+          twine check $WHEEL
+          echo
+          echo "::endgroup::"
+        done
+    - name: 📤 Publish wheels to Test PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_TEST_PASSWORD }}
+      if: ${{ env.TWINE_PASSWORD != null }}
+      run: |
+        twine upload --skip-existing --verbose --repository testpypi dist/*
+    - name: 📤 Publish source to PyPI
+      if: ${{ github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm' && env.TWINE_PASSWORD != null }}
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        twine upload dist/*
   MacAndWindows:
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
-        python-version: [ '3.6', '3.7', '3.8', '3.9', 'pypy-3.6', 'pypy-3.7' ]
+        os:
+        - windows-latest
+        - macos-latest
+        python-version:
+        - '3.6'
+        - '3.7'
+        - '3.8'
+        - '3.9'
+        - pypy-3.6
+        - pypy-3.7
       fail-fast: false
-
     name: ${{ matrix.python-version }} • ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-
     steps:
-    - uses: '${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}'
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
       with:
-        os: ${{ matrix.os }}
+        workflow: .github/workflows/publish-to-pypi.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
         python-version: ${{ matrix.python-version }}
-        packaging-tools: true
-
+    - name: Install latest pip
+      run: |
+        pip install -U pip
+    - name: Install package's system dependencies (Ubuntu)
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+    - name: Install package's system dependencies (Mac OS X)
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: |
+        true
+    - name: Install package's system dependencies (Windows)
+      if: ${{ startsWith(matrix.os, 'windows') }}
+      run: |
+        true
+    - name: Install packaging tooling
+      run: |
+        pip install twine auditwheel build
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
     - name: Install package
       run: |
         pip install -e .
-
     - name: 🚧 Build distribution 📦
       run: |
         python setup.py bdist_wheel
-
-    - name: Check distribution 📦
-      shell: bash
+    - name: ✔︎ Check 📦
       run: |
-        python -m zipfile -l dist/*
-        echo
-        twine check dist/*
-
+        for WHEEL in dist/*.whl; do
+          echo
+          echo "::group::Checking $WHEEL"
+          echo
+          python -m zipfile --list $WHEEL
+          echo
+          auditwheel show $WHEEL
+          echo
+          twine check $WHEEL
+          echo
+          echo "::endgroup::"
+        done
     - name: 📤 Publish wheels to Test PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_TEST_PASSWORD }}
-      if: env.TWINE_PASSWORD != null
+      if: ${{ env.TWINE_PASSWORD != null }}
       run: |
-        twine upload --skip-existing --verbose --repository testpypi dist/*.whl
-
-    - name: 📤 Publish wheels to PyPI
-      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm'
+        twine upload --skip-existing --verbose --repository testpypi dist/*
+    - name: 📤 Publish source to PyPI
+      if: ${{ github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm' && env.TWINE_PASSWORD != null }}
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        twine upload dist/*.whl
+        twine upload dist/*

@@ -1,36 +1,71 @@
-name: Functionality
+# Copyright (C) 2017-2021  The SymbiFlow Authors.
+#
+# Use of this source code is governed by a ISC-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/ISC
+#
+# SPDX-License-Identifier: ISC
+
+# !! WARNING !!
+# Do not modify this file directly!
+# !! WARNING !!
+#
+# It is generated from: ../workflows-src/check-functionality.yml
+# using the script from https://github.com/mithro/actions-includes@main
 
 on:
   push:
   pull_request:
-
+name: Functionality
 jobs:
-
-  Functionality:
-    runs-on: ubuntu-latest
-
+  functionality:
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        antlr_runtime_type: [static, shared]
+        antlr_runtime_type:
+        - static
+        - shared
         include:
-          - { python-version: 3.5, TOXENV: py35 }
-          - { python-version: 3.6, TOXENV: py36 }
-          - { python-version: 3.7, TOXENV: py37 }
-          - { python-version: 3.8, TOXENV: py38 }
-          - { python-version: 3.9, TOXENV: py39 }
+        - python-version: 3.5
+          TOXENV: py35
+        - python-version: 3.6
+          TOXENV: py36
+        - python-version: 3.7
+          TOXENV: py37
+        - python-version: 3.8
+          TOXENV: py38
+        - python-version: 3.9
+          TOXENV: py39
       fail-fast: false
-
     name: Functionality on Python ${{ matrix.python-version }} (with ${{ matrix.antlr_runtime_type}} antlr)
-
     steps:
-    - run: |
-        echo "${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}"
-
-    - uses: mithro/fasm/.github/workflows/system-setup@setupcfg
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
       with:
-        development-tools: true
+        workflow: .github/workflows/check-functionality.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Run Tests
+    - name: Install latest pip
       run: |
-        ANTLR4_RUNTIME_TYPE=${{ matrix.antlr_runtime_type }} tox -e ${{ matrix.TOXENV }}
+        pip install -U pip
+    - name: Install package's system dependencies (Ubuntu)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
+    - name: Install developer tooling's system dependencies (Ubuntu)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format
+    - name: Install development tools
+      run: |
+        pip install -r requirements.txt
+    - name: Run Tests
+      run: ANTLR4_RUNTIME_TYPE=${{ matrix.antlr_runtime_type }} tox -e ${{ matrix.TOXENV }}

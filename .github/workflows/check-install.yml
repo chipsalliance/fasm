@@ -1,115 +1,770 @@
-name: Install from
+# Copyright (C) 2017-2021  The SymbiFlow Authors.
+#
+# Use of this source code is governed by a ISC-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/ISC
+#
+# SPDX-License-Identifier: ISC
+
+# !! WARNING !!
+# Do not modify this file directly!
+# !! WARNING !!
+#
+# It is generated from: ../workflows-src/check-install.yml
+# using the script from https://github.com/mithro/actions-includes@main
 
 on:
   push:
   pull_request:
-
-
+name: Install from
 jobs:
-
   GitHub:
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os:
+        - windows-latest
+        - macos-latest
+        - ubuntu-20.04
       fail-fast: false
-
     runs-on: ${{ matrix.os }}
-
     steps:
-    - uses: '${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}'
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
       with:
-        os: ${{ matrix.os }}
-        git-checkout: false
-
-    - name: Test installation
+        workflow: .github/workflows/check-install.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    - name: Install latest pip
+      run: |
+        pip install -U pip
+    - name: Install package's system dependencies (Ubuntu)
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+    - name: Install package's system dependencies (Mac OS X)
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: |
+        true
+    - name: Install package's system dependencies (Windows)
+      if: ${{ startsWith(matrix.os, 'windows') }}
+      run: |
+        true
+    - name: Installing directly from GitHub
       shell: bash
       run: |
-        pip install git+https://github.com/${GITHUB_REPOSITORY}.git@${GITHUB_SHA}#egg=fasm
-
-    - name: Run smoke test
+        pip install --verbose git+https://github.com/${GITHUB_REPOSITORY}.git@${GITHUB_SHA}#egg=fasm
+    - name: Smoke Test - Run fasm tool
       run: |
         fasm --help
+    - name: Smoke Test - Import fasm module
+      shell: python
+      run: |
+        import fasm
+    - name: Smoke Test - Print fasm version info
+      run: |
+        #!/usr/bin/env python
 
-#    - name: Run tests against installed version
-#      run: |
-#        cd tests; python test_simple.py
+        import fasm.version
 
+        l = []
+
+        print()
+        print(' FASM library version info')
+        print('='*75)
+
+        kl = max(len(k) for k in dir(fasm.version))
+        for k in dir(fasm.version):
+            if '__' in k:
+                continue
+            v = getattr(fasm.version, k)
+            if isinstance(v, str) and '\n' in v:
+                l.append((k,v))
+            else:
+                print(" {!s}: {!r}".format(k.rjust(kl), v))
+
+        for k, v in l:
+            print()
+            print(k)
+            print('-'*75)
+            print(v)
+            print('-'*75)
+      shell: python
+    - name: Getting the tests
+      run: |
+        if [ -d tests ]; then
+          echo "::group::Using existing tests"
+          ls -l tests
+          echo "::endgroup::"
+        else
+          echo "::group::Event info"
+          cat ${GITHUB_EVENT_PATH}
+          echo "::endgroup::"
+          echo "::group::GitHub info"
+          echo "GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}"
+          echo "     GITHUB_ACTOR: ${GITHUB_ACTOR}"
+          echo "       GITHUB_REF: ${GITHUB_REF}"
+          echo "  GITHUB_BASE_REF: ${GITHUB_BASE_REF}"
+          echo "  GITHUB_HEAD_REF: ${GITHUB_HEAD_REF}"
+          echo "       GITHUB_SHA: ${GITHUB_SHA}"
+          echo "::endgroup::"
+          echo "::group::Downloading tests from ${GITHUB_REPOSITORY}"
+          set -x
+          mkdir .checkout-tests
+          cd .checkout-tests
+          git init
+          git config core.sparseCheckout true
+          if [ -f .git/info/sparse-checkout ]; then
+            rm .git/info/sparse-checkout
+          fi
+          echo "tests/*" >> .git/info/sparse-checkout
+          echo "examples/*" >> .git/info/sparse-checkout
+          git remote add origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git
+          git fetch --all
+          git remote -v
+          if [ ! -z "${GITHUB_REF}" ]; then
+            git fetch --refmap='' origin ${GITHUB_REF}:refs/remotes/origin/merge || true
+          fi
+          if [ ! -z "${GITHUB_BASE_REF}" ]; then
+            git fetch --refmap='' origin refs/heads/${GITHUB_BASE_REF}:refs/remotes/origin/base || true
+          fi
+          if [ ! -z "${GITHUB_HEAD_REF}" ]; then
+            git fetch --refmap='' origin refs/heads/${GITHUB_HEAD_REF}:refs/remotes/origin/head || true
+          fi
+          git remote show origin
+          git branch -v -a
+
+          git show-ref ${GITHUB_SHA} || true
+          git rev-parse --verify "sha^${GITHUB_SHA}" || true
+
+          git fetch -q https://github.com/SymbiFlow/fasm.git ${GITHUB_SHA}
+          git rev-parse FETCH_HEAD
+          git checkout ${GITHUB_SHA}
+          for i in *; do
+            cp -rvf $i ..
+          done
+          cd ..
+          echo "::endgroup::"
+        fi
+      shell: bash
+    - name: List Tests
+      shell: bash
+      run: |
+        echo "::group::Top directory"
+        ls -l tests
+        echo "::endgroup::"
+        echo "::group::Files found"
+        find tests -type f | sort
+        echo "::endgroup::"
+    - name: Run Tests
+      shell: bash
+      run: |
+        cd tests
+        python test_simple.py
   Checkout:
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os:
+        - windows-latest
+        - macos-latest
+        - ubuntu-20.04
         cmd:
-          - python setup.py install
-          - pip install .
-          - pip install -e .    # Editable install
+        - python setup.py install
+        - pip install --verbose .
+        - pip install --verbose -e .
       fail-fast: false
-
-    name: Checkout with '${{ matrix.cmd }}'
+    name: Checkout with '${{ matrix.cmd }}' (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-
     steps:
-    - uses: '${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}'
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
       with:
-        os: ${{ matrix.os }}
-
-    - name: Install using '${{ matrix.cmd }}'
+        workflow: .github/workflows/check-install.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    - name: Install latest pip
+      run: |
+        pip install -U pip
+    - name: Install package's system dependencies (Ubuntu)
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+    - name: Install package's system dependencies (Mac OS X)
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: |
+        true
+    - name: Install package's system dependencies (Windows)
+      if: ${{ startsWith(matrix.os, 'windows') }}
+      run: |
+        true
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
+    - name: Installing using '${{ matrix.cmd }}'
       run: |
         ${{ matrix.cmd }}
-
-    - name: Run smoke test
+    - name: Smoke Test - Run fasm tool
       run: |
         fasm --help
-
-    - name: Run tests against installed version
+    - name: Smoke Test - Import fasm module
+      shell: python
       run: |
-        cd tests; python test_simple.py
-
-  Wheel:
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-      fail-fast: false
-
-    runs-on: ${{ matrix.os }}
-
-    steps:
-    - uses: '${{ github.repository }}/.github/workflows/system-setup@${{ github.sha }}'
-      with:
-        os: ${{ matrix.os }}
-
-    - name: Build wheel
+        import fasm
+    - name: Smoke Test - Print fasm version info
       run: |
-        python setup.py bdist_wheel
+        #!/usr/bin/env python
 
-    - name: Upload wheel
-      uses: actions/upload-artifact@v2
-      with:
-        name: fasm
-        path: dist
+        import fasm.version
 
-    - name: Install wheel
+        l = []
+
+        print()
+        print(' FASM library version info')
+        print('='*75)
+
+        kl = max(len(k) for k in dir(fasm.version))
+        for k in dir(fasm.version):
+            if '__' in k:
+                continue
+            v = getattr(fasm.version, k)
+            if isinstance(v, str) and '\n' in v:
+                l.append((k,v))
+            else:
+                print(" {!s}: {!r}".format(k.rjust(kl), v))
+
+        for k, v in l:
+            print()
+            print(k)
+            print('-'*75)
+            print(v)
+            print('-'*75)
+      shell: python
+    - name: Getting the tests
       run: |
-        pip install dist/*.whl
+        if [ -d tests ]; then
+          echo "::group::Using existing tests"
+          ls -l tests
+          echo "::endgroup::"
+        else
+          echo "::group::Event info"
+          cat ${GITHUB_EVENT_PATH}
+          echo "::endgroup::"
+          echo "::group::GitHub info"
+          echo "GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}"
+          echo "     GITHUB_ACTOR: ${GITHUB_ACTOR}"
+          echo "       GITHUB_REF: ${GITHUB_REF}"
+          echo "  GITHUB_BASE_REF: ${GITHUB_BASE_REF}"
+          echo "  GITHUB_HEAD_REF: ${GITHUB_HEAD_REF}"
+          echo "       GITHUB_SHA: ${GITHUB_SHA}"
+          echo "::endgroup::"
+          echo "::group::Downloading tests from ${GITHUB_REPOSITORY}"
+          set -x
+          mkdir .checkout-tests
+          cd .checkout-tests
+          git init
+          git config core.sparseCheckout true
+          if [ -f .git/info/sparse-checkout ]; then
+            rm .git/info/sparse-checkout
+          fi
+          echo "tests/*" >> .git/info/sparse-checkout
+          echo "examples/*" >> .git/info/sparse-checkout
+          git remote add origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git
+          git fetch --all
+          git remote -v
+          if [ ! -z "${GITHUB_REF}" ]; then
+            git fetch --refmap='' origin ${GITHUB_REF}:refs/remotes/origin/merge || true
+          fi
+          if [ ! -z "${GITHUB_BASE_REF}" ]; then
+            git fetch --refmap='' origin refs/heads/${GITHUB_BASE_REF}:refs/remotes/origin/base || true
+          fi
+          if [ ! -z "${GITHUB_HEAD_REF}" ]; then
+            git fetch --refmap='' origin refs/heads/${GITHUB_HEAD_REF}:refs/remotes/origin/head || true
+          fi
+          git remote show origin
+          git branch -v -a
 
-    - name: Run smoke test
+          git show-ref ${GITHUB_SHA} || true
+          git rev-parse --verify "sha^${GITHUB_SHA}" || true
+
+          git fetch -q https://github.com/SymbiFlow/fasm.git ${GITHUB_SHA}
+          git rev-parse FETCH_HEAD
+          git checkout ${GITHUB_SHA}
+          for i in *; do
+            cp -rvf $i ..
+          done
+          cd ..
+          echo "::endgroup::"
+        fi
+      shell: bash
+    - name: List Tests
+      shell: bash
       run: |
-        fasm --help
-
-    - name: Run tests against installed version
+        echo "::group::Top directory"
+        ls -l tests
+        echo "::endgroup::"
+        echo "::group::Files found"
+        find tests -type f | sort
+        echo "::endgroup::"
+    - name: Run Tests
+      shell: bash
       run: |
-        cd tests; python test_simple.py
-
+        cd tests
+        python test_simple.py
   make-env:
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-
+        os:
+        - windows-latest
+        - macos-latest
+        - ubuntu-20.04
+      fail-fast: false
     name: make-env (Conda)
     runs-on: ${{ matrix.os }}
-
     steps:
-    - uses: '${{ github.repository }}/.github/workflows/checkout@${{ github.sha }}'
-
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
+      with:
+        workflow: .github/workflows/check-install.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    - name: Install latest pip
+      run: |
+        pip install -U pip
+    - name: Install package's system dependencies (Ubuntu)
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+    - name: Install package's system dependencies (Mac OS X)
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: |
+        true
+    - name: Install package's system dependencies (Windows)
+      if: ${{ startsWith(matrix.os, 'windows') }}
+      run: |
+        true
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
     - name: Run tests
       run: |
-        make tests
+        make test
+  BuildSdist:
+    strategy:
+      matrix:
+        os:
+        - ubuntu-20.04
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
+      with:
+        workflow: .github/workflows/check-install.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    - name: Install latest pip
+      run: |
+        pip install -U pip
+    - name: Install package's system dependencies (Ubuntu)
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+    - name: Install package's system dependencies (Mac OS X)
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: |
+        true
+    - name: Install package's system dependencies (Windows)
+      if: ${{ startsWith(matrix.os, 'windows') }}
+      run: |
+        true
+    - name: Install packaging tooling
+      run: |
+        pip install twine auditwheel build
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
+    - name: Build wheel
+      run: |
+        python -m build --sdist
+    - name: Upload wheel
+      uses: actions/upload-artifact@v2
+      with:
+        name: fasm-sdist
+        path: dist
+  sdist:
+    strategy:
+      matrix:
+        os:
+        - windows-latest
+        - macos-latest
+        - ubuntu-20.04
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    needs: BuildSdist
+    steps:
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
+      with:
+        workflow: .github/workflows/check-install.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    - name: Install latest pip
+      run: |
+        pip install -U pip
+    - name: Install package's system dependencies (Ubuntu)
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+    - name: Install package's system dependencies (Mac OS X)
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: |
+        true
+    - name: Install package's system dependencies (Windows)
+      if: ${{ startsWith(matrix.os, 'windows') }}
+      run: |
+        true
+    - name: Download sdist
+      uses: actions/download-artifact@v2
+      with:
+        name: fasm-sdist
+        path: dist
+    - name: Installing using the sdist
+      shell: bash
+      run: |
+        ls -l dist/*
+        pip install --verbose dist/*
+    - name: Smoke Test - Run fasm tool
+      run: |
+        fasm --help
+    - name: Smoke Test - Import fasm module
+      shell: python
+      run: |
+        import fasm
+    - name: Smoke Test - Print fasm version info
+      run: |
+        #!/usr/bin/env python
+
+        import fasm.version
+
+        l = []
+
+        print()
+        print(' FASM library version info')
+        print('='*75)
+
+        kl = max(len(k) for k in dir(fasm.version))
+        for k in dir(fasm.version):
+            if '__' in k:
+                continue
+            v = getattr(fasm.version, k)
+            if isinstance(v, str) and '\n' in v:
+                l.append((k,v))
+            else:
+                print(" {!s}: {!r}".format(k.rjust(kl), v))
+
+        for k, v in l:
+            print()
+            print(k)
+            print('-'*75)
+            print(v)
+            print('-'*75)
+      shell: python
+    - name: Getting the tests
+      run: |
+        if [ -d tests ]; then
+          echo "::group::Using existing tests"
+          ls -l tests
+          echo "::endgroup::"
+        else
+          echo "::group::Event info"
+          cat ${GITHUB_EVENT_PATH}
+          echo "::endgroup::"
+          echo "::group::GitHub info"
+          echo "GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}"
+          echo "     GITHUB_ACTOR: ${GITHUB_ACTOR}"
+          echo "       GITHUB_REF: ${GITHUB_REF}"
+          echo "  GITHUB_BASE_REF: ${GITHUB_BASE_REF}"
+          echo "  GITHUB_HEAD_REF: ${GITHUB_HEAD_REF}"
+          echo "       GITHUB_SHA: ${GITHUB_SHA}"
+          echo "::endgroup::"
+          echo "::group::Downloading tests from ${GITHUB_REPOSITORY}"
+          set -x
+          mkdir .checkout-tests
+          cd .checkout-tests
+          git init
+          git config core.sparseCheckout true
+          if [ -f .git/info/sparse-checkout ]; then
+            rm .git/info/sparse-checkout
+          fi
+          echo "tests/*" >> .git/info/sparse-checkout
+          echo "examples/*" >> .git/info/sparse-checkout
+          git remote add origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git
+          git fetch --all
+          git remote -v
+          if [ ! -z "${GITHUB_REF}" ]; then
+            git fetch --refmap='' origin ${GITHUB_REF}:refs/remotes/origin/merge || true
+          fi
+          if [ ! -z "${GITHUB_BASE_REF}" ]; then
+            git fetch --refmap='' origin refs/heads/${GITHUB_BASE_REF}:refs/remotes/origin/base || true
+          fi
+          if [ ! -z "${GITHUB_HEAD_REF}" ]; then
+            git fetch --refmap='' origin refs/heads/${GITHUB_HEAD_REF}:refs/remotes/origin/head || true
+          fi
+          git remote show origin
+          git branch -v -a
+
+          git show-ref ${GITHUB_SHA} || true
+          git rev-parse --verify "sha^${GITHUB_SHA}" || true
+
+          git fetch -q https://github.com/SymbiFlow/fasm.git ${GITHUB_SHA}
+          git rev-parse FETCH_HEAD
+          git checkout ${GITHUB_SHA}
+          for i in *; do
+            cp -rvf $i ..
+          done
+          cd ..
+          echo "::endgroup::"
+        fi
+      shell: bash
+    - name: List Tests
+      shell: bash
+      run: |
+        echo "::group::Top directory"
+        ls -l tests
+        echo "::endgroup::"
+        echo "::group::Files found"
+        find tests -type f | sort
+        echo "::endgroup::"
+    - name: Run Tests
+      shell: bash
+      run: |
+        cd tests
+        python test_simple.py
+  BuildWheel:
+    strategy:
+      matrix:
+        os:
+        - windows-latest
+        - macos-latest
+        - ubuntu-20.04
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
+      with:
+        workflow: .github/workflows/check-install.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    - name: Install latest pip
+      run: |
+        pip install -U pip
+    - name: Install package's system dependencies (Ubuntu)
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+    - name: Install package's system dependencies (Mac OS X)
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: |
+        true
+    - name: Install package's system dependencies (Windows)
+      if: ${{ startsWith(matrix.os, 'windows') }}
+      run: |
+        true
+    - name: Install packaging tooling
+      run: |
+        pip install twine auditwheel build
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
+    - name: Build wheel
+      run: |
+        python -m build --wheel
+    - name: Upload wheel
+      uses: actions/upload-artifact@v2
+      with:
+        name: fasm-wheel-${{ matrix.os }}
+        path: dist
+  Wheel:
+    strategy:
+      matrix:
+        os:
+        - windows-latest
+        - macos-latest
+        - ubuntu-20.04
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    needs: BuildWheel
+    steps:
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
+      with:
+        workflow: .github/workflows/check-install.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    - name: Install latest pip
+      run: |
+        pip install -U pip
+    - name: Install package's system dependencies (Ubuntu)
+      if: ${{ startsWith(matrix.os, 'ubuntu') }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+    - name: Install package's system dependencies (Mac OS X)
+      if: ${{ startsWith(matrix.os, 'macos') }}
+      run: |
+        true
+    - name: Install package's system dependencies (Windows)
+      if: ${{ startsWith(matrix.os, 'windows') }}
+      run: |
+        true
+    - name: Download wheel
+      uses: actions/download-artifact@v2
+      with:
+        name: fasm-wheel-${{ matrix.os }}
+        path: dist
+    - name: Installing using the wheel
+      run: |
+        ls -l dist/*
+        pip install --verbose dist/*.whl
+    - name: Smoke Test - Run fasm tool
+      run: |
+        fasm --help
+    - name: Smoke Test - Import fasm module
+      shell: python
+      run: |
+        import fasm
+    - name: Smoke Test - Print fasm version info
+      run: |
+        #!/usr/bin/env python
+
+        import fasm.version
+
+        l = []
+
+        print()
+        print(' FASM library version info')
+        print('='*75)
+
+        kl = max(len(k) for k in dir(fasm.version))
+        for k in dir(fasm.version):
+            if '__' in k:
+                continue
+            v = getattr(fasm.version, k)
+            if isinstance(v, str) and '\n' in v:
+                l.append((k,v))
+            else:
+                print(" {!s}: {!r}".format(k.rjust(kl), v))
+
+        for k, v in l:
+            print()
+            print(k)
+            print('-'*75)
+            print(v)
+            print('-'*75)
+      shell: python
+    - name: Getting the tests
+      run: |
+        if [ -d tests ]; then
+          echo "::group::Using existing tests"
+          ls -l tests
+          echo "::endgroup::"
+        else
+          echo "::group::Event info"
+          cat ${GITHUB_EVENT_PATH}
+          echo "::endgroup::"
+          echo "::group::GitHub info"
+          echo "GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}"
+          echo "     GITHUB_ACTOR: ${GITHUB_ACTOR}"
+          echo "       GITHUB_REF: ${GITHUB_REF}"
+          echo "  GITHUB_BASE_REF: ${GITHUB_BASE_REF}"
+          echo "  GITHUB_HEAD_REF: ${GITHUB_HEAD_REF}"
+          echo "       GITHUB_SHA: ${GITHUB_SHA}"
+          echo "::endgroup::"
+          echo "::group::Downloading tests from ${GITHUB_REPOSITORY}"
+          set -x
+          mkdir .checkout-tests
+          cd .checkout-tests
+          git init
+          git config core.sparseCheckout true
+          if [ -f .git/info/sparse-checkout ]; then
+            rm .git/info/sparse-checkout
+          fi
+          echo "tests/*" >> .git/info/sparse-checkout
+          echo "examples/*" >> .git/info/sparse-checkout
+          git remote add origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git
+          git fetch --all
+          git remote -v
+          if [ ! -z "${GITHUB_REF}" ]; then
+            git fetch --refmap='' origin ${GITHUB_REF}:refs/remotes/origin/merge || true
+          fi
+          if [ ! -z "${GITHUB_BASE_REF}" ]; then
+            git fetch --refmap='' origin refs/heads/${GITHUB_BASE_REF}:refs/remotes/origin/base || true
+          fi
+          if [ ! -z "${GITHUB_HEAD_REF}" ]; then
+            git fetch --refmap='' origin refs/heads/${GITHUB_HEAD_REF}:refs/remotes/origin/head || true
+          fi
+          git remote show origin
+          git branch -v -a
+
+          git show-ref ${GITHUB_SHA} || true
+          git rev-parse --verify "sha^${GITHUB_SHA}" || true
+
+          git fetch -q https://github.com/SymbiFlow/fasm.git ${GITHUB_SHA}
+          git rev-parse FETCH_HEAD
+          git checkout ${GITHUB_SHA}
+          for i in *; do
+            cp -rvf $i ..
+          done
+          cd ..
+          echo "::endgroup::"
+        fi
+      shell: bash
+    - name: List Tests
+      shell: bash
+      run: |
+        echo "::group::Top directory"
+        ls -l tests
+        echo "::endgroup::"
+        echo "::group::Files found"
+        find tests -type f | sort
+        echo "::endgroup::"
+    - name: Run Tests
+      shell: bash
+      run: |
+        cd tests
+        python test_simple.py
