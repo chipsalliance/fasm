@@ -83,6 +83,11 @@ test: fasm/version.py | $(CONDA_ENV_PYTHON)
 
 .PHONY: test
 
+tests: test
+	@true
+
+.PHONY: tests
+
 # Find files to apply tools to while ignoring files.
 define with_files
   $(IN_CONDA_ENV) git ls-files | grep -ve '^third_party\|^\.|^env' | grep -e $(1) | xargs -r -P $$(nproc) $(2)
