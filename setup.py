@@ -45,8 +45,16 @@ assert version_value[-1] == '"', version_value
 version = version_value[1:-1]
 
 
+# C extensions
+extensions = []
+cmdclass = {}
+
+# Antlr based parser
+# ------------------------------------------------------------------------
 # Based on: https://www.benjack.io/2018/02/02/python-cpp-revisited.html
 # GitHub: https://github.com/benjaminjack/python_cpp_example
+
+
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir='', prefix=''):
         Extension.__init__(self, name, sources=[])
@@ -248,11 +256,46 @@ class DevelopCommand(develop):
         super().run()
 
 
+extensions += [
+    CMakeExtension('parse_fasm', sourcedir='src', prefix='fasm/parser'),
+]
+cmdclass['build_ext'] = AntlrCMakeBuild
+cmdclass['build'] = BuildCommand
+cmdclass['develop'] = DevelopCommand
+cmdclass['install'] = InstallCommand
+# ------------------------------------------------------------------------
+
+# Cython based accelerator
+# ------------------------------------------------------------------------
+# Cython recommends shipping the .c file as part of your sdist package.
+
+
 class SdistCommand(sdist):
     def run(self):
         from Cython.Build import cythonize
         cythonize("fasm/parser/antlr_to_tuple.pyx")
         super().run()
+
+
+CYTHON_EXT_FILEBASE = 'fasm/parser/antlr_to_tuple'
+if os.path.exists(CYTHON_EXT_FILEBASE + '.c'):
+    # Building from sdist which already includes the generated
+    # `antlr_to_tuple.c` file, so can treat it like any other C extensions.
+    extensions += [
+        Extension(
+            "fasm.parser.antlr_to_tuple", [CYTHON_EXT_FILEBASE + '.c']),
+    ]
+else:
+    # Building without a `antlr_to_tuple.c` file, so need to use Cython to
+    # generate the new `antlr_to_tuple.c` file from the `antlr_to_tuple.pyx`.
+    from Cython.Build import cythonize
+    extensions += [
+        Extension(
+            "fasm.parser.antlr_to_tuple", [CYTHON_EXT_FILEBASE + '.pyx']),
+    ]
+    extensions = cythonize(extensions)
+    cmdclass['sdist'] = SdistCommand
+# ------------------------------------------------------------------------
 
 
 setuptools.setup(
@@ -289,16 +332,6 @@ setuptools.setup(
         'textx',
     ],
     # C extension building
-    ext_modules=[
-        CMakeExtension('parse_fasm', sourcedir='src', prefix='fasm/parser'),
-        Extension(
-            "fasm.parser.antlr_to_tuple", ['fasm/parser/antlr_to_tuple.c']),
-    ],
-    cmdclass={
-        'build_ext': AntlrCMakeBuild,
-        'build': BuildCommand,
-        'develop': DevelopCommand,
-        'install': InstallCommand,
-        'sdist': SdistCommand,
-    },
+    ext_modules=extensions,
+    cmdclass=cmdclass,
 )

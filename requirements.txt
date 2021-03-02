@@ -1,5 +1,9 @@
 # Get fasm tooling requirements
 -e .
+# WARNING: Must be kept in sync with pyproject.toml
+cython
+setuptools>=42
+wheel
 # Testing
 check-manifest
 flake8
