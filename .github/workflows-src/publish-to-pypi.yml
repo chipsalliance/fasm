@@ -13,6 +13,7 @@ on:
   pull_request:
   workflow_dispatch:
 
+
 jobs:
 
   Source:
@@ -20,96 +21,47 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-    - includes: /system-setup
+    - includes: /checkout
+
+    - includes: mithro/actions/includes/python/publish-to-pypi-src@main
       with:
-        packaging-tools: true
+        root_user: SymbiFlow
 
-    - name: Install package
-      run: |
-        pip install -e .
-
-    - name: 🚧 Build distribution 📦
-      run: |
-        python -m build --sdist .
-
-    - includes: /upload-to-pypi
-      with:
-        root_repo: SymbiFlow/fasm
-        type: source
-
-  Linux:
+  Wheels-Linux:
     strategy:
       matrix:
-        include:
-          - { python-version: '3.6', manylinux-python: 'cp36-cp36m' }
-          - { python-version: '3.7', manylinux-python: 'cp37-cp37m' }
-          - { python-version: '3.8', manylinux-python: 'cp38-cp38' }
-          - { python-version: '3.9', manylinux-python: 'cp39-cp39' }
+        python-version: [ '3.6', '3.7', '3.8', '3.9' ]
       fail-fast: false
 
     name: '${{ matrix.python-version }} • manylinux'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
-    - includes: /system-setup
+    - includes: /checkout
+
+    - includes: mithro/actions/includes/python/publish-to-pypi-wheels-bin-linux@main
       with:
+        pre-build-command: bash .github/workflows/manylinux-install-cmake.sh
+        build-requirements: cython
+        system-packages: java-1.8.0-openjdk uuid uuid-devel libuuid libuuid-devel git
         python-version: ${{ matrix.python-version }}
-        system-dependencies: false
-        packaging-tools: true
+        package-path: ''
+        root_user: SymbiFlow
 
-    - name: 🚧 Build distribution 📦
-      uses: RalfG/python-wheels-manylinux-build@v0.3.3-manylinux2010_x86_64
-      with:
-        build-requirements: 'cython'
-        pre-build-command: 'bash .github/workflows/manylinux-install-cmake.sh'
-        python-versions: ${{ matrix.manylinux-python }}
-        #pip-wheel-args: '-w ./dist --no-deps --verbose'
-
-    - name: List distribution 📦
-      run: |
-        # Fix permissions
-        echo "::group::Fixing permission"
-        ls -l dist/*
-        echo $USER
-        whoami
-        sudo chown -R $USER dist
-        ls -l dist/*
-        echo "::endgroup::"
-        # Remove the non-manylinux versions
-        rm -v dist/*linux_x86_64*.whl
-        ls -l dist/*
-
-    - includes: /upload-to-pypi
-      with:
-        root_repo: SymbiFlow/fasm
-        type: wheels
-
-  MacAndWindows:
+  Wheels-Other:
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
-        python-version: [ '3.6', '3.7', '3.8', '3.9', 'pypy-3.6', 'pypy-3.7' ]
+        python-version: [ '3.6', '3.7', '3.8', '3.9' ]
       fail-fast: false
 
-    name: ${{ matrix.python-version }} • ${{ matrix.os }}
+    name: '${{ matrix.python-version }} • ${{ matrix.os }}'
     runs-on: ${{ matrix.os }}
 
     steps:
-    - includes: /system-setup
+    - includes: /checkout
+
+    - includes: mithro/actions/includes/python/publish-to-pypi-wheels-bin-other@main
       with:
-        os: ${{ matrix.os }}
         python-version: ${{ matrix.python-version }}
-        packaging-tools: true
-
-    - name: Install package
-      run: |
-        pip install -e .
-
-    - name: 🚧 Build distribution 📦
-      run: |
-        python setup.py bdist_wheel
-
-    - includes: /upload-to-pypi
-      with:
-        root_repo: SymbiFlow/fasm
-        type: wheels
+        root_user: SymbiFlow

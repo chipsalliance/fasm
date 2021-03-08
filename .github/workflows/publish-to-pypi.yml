@@ -28,6 +28,11 @@ jobs:
       continue-on-error: false
       with:
         workflow: .github/workflows/publish-to-pypi.yml
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
     - name: 🐍 Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -35,38 +40,45 @@ jobs:
     - name: Install latest pip
       run: |
         pip install -U pip
-    - name: Install package's system dependencies (Ubuntu)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
     - name: Install packaging tooling
       run: |
-        pip install twine auditwheel build
-    - name: 🧰 Checkout
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-        submodules: true
-    - name: Install package
+        pip install twine wheel auditwheel build
+    - name: Install development tools
       run: |
-        pip install -e .
+        pip install -r requirements.txt
     - name: 🚧 Build distribution 📦
       run: |
-        python -m build --sdist .
+        python -m build --sdist --no-isolation .
     - name: ✔︎ Check 📦
+      shell: bash
       run: |
-        for WHEEL in dist/*.whl; do
+        shopt -s nullglob
+        for SRC in dist/*.zip; do
           echo
-          echo "::group::Checking $WHEEL"
+          echo "::group::Checking $SRC"
           echo
-          python -m zipfile --list $WHEEL
+          python -m zipfile --test $SRC
+          python -m zipfile --list $SRC
           echo
-          auditwheel show $WHEEL
-          echo
-          twine check $WHEEL
+          twine check $SRC
           echo
           echo "::endgroup::"
         done
+        for SRC in dist/*.t*gz; do
+          echo
+          echo "::group::Checking $SRC"
+          echo
+          python -m tarfile --list $SRC
+          echo
+          twine check $SRC
+          echo
+          echo "::endgroup::"
+        done
+    - name: Upload wheel
+      uses: actions/upload-artifact@v2
+      with:
+        name: source-${{ runner.os }}
+        path: dist
     - name: 📤 Publish source to Test PyPI
       env:
         TWINE_USERNAME: __token__
@@ -75,54 +87,79 @@ jobs:
       run: |
         twine upload --skip-existing --verbose --repository testpypi dist/*
     - name: 📤 Publish source to PyPI
-      if: ${{ github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm' && env.TWINE_PASSWORD != null }}
+      if: ${{ github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && startsWith('SymbiFlow', github.repository) && env.TWINE_PASSWORD != null }}
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         twine upload dist/*
-  Linux:
+  Wheels-Linux:
     strategy:
       matrix:
-        include:
-        - python-version: '3.6'
-          manylinux-python: cp36-cp36m
-        - python-version: '3.7'
-          manylinux-python: cp37-cp37m
-        - python-version: '3.8'
-          manylinux-python: cp38-cp38
-        - python-version: '3.9'
-          manylinux-python: cp39-cp39
+        python-version:
+        - '3.6'
+        - '3.7'
+        - '3.8'
+        - '3.9'
       fail-fast: false
     name: ${{ matrix.python-version }} • manylinux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: mithro/actions-includes@main
       if: runner.os == 'Linux'
       continue-on-error: false
       with:
         workflow: .github/workflows/publish-to-pypi.yml
-    - name: 🐍 Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install latest pip
-      run: |
-        pip install -U pip
-    - name: Install packaging tooling
-      run: |
-        pip install twine auditwheel build
     - name: 🧰 Checkout
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
         submodules: true
+    - name: Config Check
+      if: ${{ !startsWith(runner.os, 'Linux') }}
+      run: |
+        echo "Use"
+        echo
+        echo "  SymbiFlow/actions/includes/python/publish-to-pypi-sheels-bin-other"
+        echo
+        echo "for Windows / Mac"
+        echo
+        exit 1
+    - name: Install packaging tooling on runner
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        export PATH=$HOME/.local/bin:$PATH
+        pip install -U pip twine wheel auditwheel
+    - name: Check packaging tooling on runner
+      run: |
+        echo $PATH
+        which pip
+        which twine
+        which wheel
+        which auditwheel
+    - name: Workout manylinux-version
+      id: manylinux
+      shell: python
+      env:
+        PYTHON_VERSION: ${{ matrix.python-version }}
+      run: |
+        import os
+        MANYLINUX = {
+            "3.6": "cp36-cp36m",
+            "3.7": "cp37-cp37m",
+            "3.8": "cp38-cp38",
+            "3.9": "cp39-cp39",
+        }[os.environ['PYTHON_VERSION']]
+        print("::set-output name=version::"+MANYLINUX)
     - name: 🚧 Build distribution 📦
       uses: RalfG/python-wheels-manylinux-build@v0.3.3-manylinux2010_x86_64
       with:
         build-requirements: cython
+        system-packages: java-1.8.0-openjdk uuid uuid-devel libuuid libuuid-devel git
+        python-versions: ${{ steps.manylinux.outputs.version }}
         pre-build-command: bash .github/workflows/manylinux-install-cmake.sh
-        python-versions: ${{ matrix.manylinux-python }}
+        package-path: ''
+        pip-wheel-args: -w ./dist --no-deps --verbose
     - name: List distribution 📦
       run: |
         # Fix permissions
@@ -137,19 +174,28 @@ jobs:
         rm -v dist/*linux_x86_64*.whl
         ls -l dist/*
     - name: ✔︎ Check 📦
+      shell: bash
       run: |
         for WHEEL in dist/*.whl; do
           echo
           echo "::group::Checking $WHEEL"
           echo
-          python -m zipfile --list $WHEEL
+          python -m zipfile -t $WHEEL
+          python -m zipfile -l $WHEEL
           echo
-          auditwheel show $WHEEL
+          if [ "$(uname)" = "Linux" ]; then
+            auditwheel show $WHEEL
+          fi
           echo
           twine check $WHEEL
           echo
           echo "::endgroup::"
         done
+    - name: Upload wheel
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheels-${{ runner.os }}
+        path: dist
     - name: 📤 Publish wheels to Test PyPI
       env:
         TWINE_USERNAME: __token__
@@ -158,13 +204,13 @@ jobs:
       run: |
         twine upload --skip-existing --verbose --repository testpypi dist/*
     - name: 📤 Publish source to PyPI
-      if: ${{ github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm' && env.TWINE_PASSWORD != null }}
+      if: ${{ github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && startsWith('SymbiFlow', github.repository) && env.TWINE_PASSWORD != null }}
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         twine upload dist/*
-  MacAndWindows:
+  Wheels-Other:
     strategy:
       matrix:
         os:
@@ -175,8 +221,6 @@ jobs:
         - '3.7'
         - '3.8'
         - '3.9'
-        - pypy-3.6
-        - pypy-3.7
       fail-fast: false
     name: ${{ matrix.python-version }} • ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -186,6 +230,21 @@ jobs:
       continue-on-error: false
       with:
         workflow: .github/workflows/publish-to-pypi.yml
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
+    - name: Config Check
+      if: ${{ startsWith(runner.os, 'Linux') }}
+      run: |
+        echo "Use"
+        echo
+        echo "  SymbiFlow/actions/includes/python/publish-to-pypi-sheels-bin-linux"
+        echo
+        echo "for Linux"
+        echo
+        exit 1
     - name: 🐍 Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -193,47 +252,35 @@ jobs:
     - name: Install latest pip
       run: |
         pip install -U pip
-    - name: Install package's system dependencies (Ubuntu)
-      if: ${{ startsWith(matrix.os, 'ubuntu') }}
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
-    - name: Install package's system dependencies (Mac OS X)
-      if: ${{ startsWith(matrix.os, 'macos') }}
-      run: |
-        true
-    - name: Install package's system dependencies (Windows)
-      if: ${{ startsWith(matrix.os, 'windows') }}
-      run: |
-        true
     - name: Install packaging tooling
       run: |
-        pip install twine auditwheel build
-    - name: 🧰 Checkout
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-        submodules: true
-    - name: Install package
-      run: |
-        pip install -e .
+        pip install twine wheel auditwheel build
     - name: 🚧 Build distribution 📦
       run: |
-        python setup.py bdist_wheel
+        python -m build --wheel .
     - name: ✔︎ Check 📦
+      shell: bash
       run: |
         for WHEEL in dist/*.whl; do
           echo
           echo "::group::Checking $WHEEL"
           echo
-          python -m zipfile --list $WHEEL
+          python -m zipfile -t $WHEEL
+          python -m zipfile -l $WHEEL
           echo
-          auditwheel show $WHEEL
+          if [ "$(uname)" = "Linux" ]; then
+            auditwheel show $WHEEL
+          fi
           echo
           twine check $WHEEL
           echo
           echo "::endgroup::"
         done
+    - name: Upload wheel
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheels-${{ runner.os }}
+        path: dist
     - name: 📤 Publish wheels to Test PyPI
       env:
         TWINE_USERNAME: __token__
@@ -242,7 +289,7 @@ jobs:
       run: |
         twine upload --skip-existing --verbose --repository testpypi dist/*
     - name: 📤 Publish source to PyPI
-      if: ${{ github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'SymbiFlow/fasm' && env.TWINE_PASSWORD != null }}
+      if: ${{ github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && startsWith('SymbiFlow', github.repository) && env.TWINE_PASSWORD != null }}
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
