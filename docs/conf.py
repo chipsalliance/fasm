@@ -41,9 +41,13 @@ sys.path.insert(0, os.path.abspath('.'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.doctest',
-    'sphinx.ext.imgmath', 'sphinx.ext.napoleon', 'sphinx.ext.todo',
-    'sphinx_markdown_tables'
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
+    'sphinx.ext.imgmath',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.todo',
+    'sphinx_markdown_tables',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -110,7 +114,7 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_materialdesign_theme'
+html_theme = 'sphinx_symbiflow_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -143,36 +147,27 @@ html_theme_options = {
     #         indigo, light_blue, light_green, lime, orange, pink, purple, red,
     #         teal, yellow
     # (Default: indigo)
-    'primary_color':
-    'deep_purple',
+    'primary_color': 'deep_purple',
     # Values: Same as primary_color. (Default: pink)
-    'accent_color':
-    'purple',
+    'accent_color': 'purple',
 
     # Customize layout.
     # For details see link.
     # https://getmdl.io/components/index.html#layout-section
-    'fixed_drawer':
-    True,
-    'fixed_header':
-    True,
-    'header_waterfall':
-    True,
-    'header_scroll':
-    False,
+    'fixed_drawer': True,
+    'fixed_header': True,
+    'header_waterfall': True,
+    'header_scroll': False,
 
     # Render title in header.
     # Values: True, False (Default: False)
-    'show_header_title':
-    False,
+    'show_header_title': False,
     # Render title in drawer.
     # Values: True, False (Default: True)
-    'show_drawer_title':
-    True,
+    'show_drawer_title': True,
     # Render footer.
     # Values: True, False (Default: True)
-    'show_footer':
-    True
+    'show_footer': True
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -222,8 +217,12 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (
-        master_doc, 'fasm.tex', u'SymbiFlow FASM Documentation',
-        u'SymbiFlow Team', 'manual'),
+        master_doc,
+        'fasm.tex',
+        u'SymbiFlow FASM Documentation',
+        u'SymbiFlow Team',
+        'manual',
+    ),
 ]
 
 # -- Options for manual page output ---------------------------------------
@@ -232,8 +231,12 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     (
-        master_doc, 'symbiflow-fasm', u'SymbiFlow FASM Documentation',
-        [author], 1)
+        master_doc,
+        'symbiflow-fasm',
+        u'SymbiFlow FASM Documentation',
+        [author],
+        1,
+    ),
 ]
 
 # -- Options for Texinfo output -------------------------------------------
@@ -243,8 +246,14 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (
-        master_doc, 'SymbiFlowFASM', u'SymbiFlow FASM Documentation', author,
-        'SymbiFlowFASM', 'One line description of project.', 'Miscellaneous'),
+        master_doc,
+        'SymbiFlowFASM',
+        u'SymbiFlow FASM Documentation',
+        author,
+        'SymbiFlowFASM',
+        'One line description of project.',
+        'Miscellaneous',
+    ),
 ]
 
 # Example configuration for intersphinx: refer to the Python standard library.
