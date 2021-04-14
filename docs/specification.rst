@@ -1,5 +1,5 @@
-FPGA ASM (FASM) Specification
-=============================
+FPGA Assembly (FASM) Specification
+==================================
 
 Introduction
 ------------
