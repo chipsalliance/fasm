@@ -1,0 +1,46 @@
+# Copyright (C) 2021  The SymbiFlow Authors.
+#
+# Use of this source code is governed by a ISC-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/ISC
+#
+# SPDX-License-Identifier: ISC
+
+name: Download and run tests
+description: "Download the tests from GitHub and run them."
+
+runs:
+  using: "includes"
+
+  steps:
+
+  - name: Smoke Test - Run fasm tool
+    run: |
+      fasm --help
+
+  - name: Smoke Test - Import fasm module
+    shell: python
+    run: |
+      import fasm
+
+  - name: Smoke Test - Print fasm version info
+    includes-script: fasm-version.py
+
+  - name: Getting the tests
+    includes-script: get-tests.sh
+
+  - name: List Tests
+    shell: bash
+    run: |
+      echo "::group::Top directory"
+      ls -l tests
+      echo "::endgroup::"
+      echo "::group::Files found"
+      find tests -type f | sort
+      echo "::endgroup::"
+
+  - name: Run Tests
+    shell: bash
+    run: |
+      cd tests
+      python test_simple.py

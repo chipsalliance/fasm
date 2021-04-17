@@ -1,0 +1,39 @@
+# Copyright (C) 2021  The SymbiFlow Authors.
+#
+# Use of this source code is governed by a ISC-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/ISC
+#
+# SPDX-License-Identifier: ISC
+
+name: Style
+
+on:
+  push:
+  pull_request:
+
+jobs:
+
+  Style:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - includes: /system-setup
+      with:
+        development-tools: true
+
+    - name: Check license headers
+      run: make check-license
+
+    - name: Python style check
+      run: |
+        make format lint
+        test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }
+
+    - name: Python script checks
+      run: make check-python-scripts
+
+    - name: C++ style check
+      run: |
+        make format-cpp
+        test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }

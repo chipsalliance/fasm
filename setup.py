@@ -17,13 +17,13 @@ import subprocess
 import sys
 import traceback
 
-from Cython.Build import cythonize
 from distutils.command.build import build
 from distutils.version import LooseVersion
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
 from setuptools.command.develop import develop
 from setuptools.command.install import install
+from setuptools.command.sdist import sdist
 
 __dir__ = os.path.dirname(os.path.abspath(__file__))
 
@@ -33,12 +33,8 @@ with open("README.md", "r") as fh:
 
 # Read in the version information
 FASM_VERSION_FILE = os.path.join(__dir__, 'fasm', 'version.py')
-with open(FASM_VERSION_FILE) as f:
-    if 'UNKNOWN' in f.read():
-        print(
-            "Running update_version.py to generate {}".format(
-                FASM_VERSION_FILE))
-        subprocess.check_call(['python', 'update_version.py'], cwd=__dir__)
+if not os.path.exists(FASM_VERSION_FILE):
+    subprocess.check_call([sys.executable, 'update_version.py'], cwd=__dir__)
 with open(FASM_VERSION_FILE) as f:
     lines = f.readlines()
     version_line = [v.strip() for v in lines if v.startswith('version_str')]
@@ -49,8 +45,16 @@ assert version_value[-1] == '"', version_value
 version = version_value[1:-1]
 
 
+# C extensions
+extensions = []
+cmdclass = {}
+
+# Antlr based parser
+# ------------------------------------------------------------------------
 # Based on: https://www.benjack.io/2018/02/02/python-cpp-revisited.html
 # GitHub: https://github.com/benjaminjack/python_cpp_example
+
+
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir='', prefix=''):
         Extension.__init__(self, name, sources=[])
@@ -252,7 +256,50 @@ class DevelopCommand(develop):
         super().run()
 
 
+extensions += [
+    CMakeExtension('parse_fasm', sourcedir='src', prefix='fasm/parser'),
+]
+cmdclass['build_ext'] = AntlrCMakeBuild
+cmdclass['build'] = BuildCommand
+cmdclass['develop'] = DevelopCommand
+cmdclass['install'] = InstallCommand
+# ------------------------------------------------------------------------
+
+# Cython based accelerator
+# ------------------------------------------------------------------------
+# Cython recommends shipping the .c file as part of your sdist package.
+
+
+class SdistCommand(sdist):
+    def run(self):
+        from Cython.Build import cythonize
+        cythonize("fasm/parser/antlr_to_tuple.pyx")
+        super().run()
+
+
+CYTHON_EXT_FILEBASE = 'fasm/parser/antlr_to_tuple'
+if os.path.exists(CYTHON_EXT_FILEBASE + '.c'):
+    # Building from sdist which already includes the generated
+    # `antlr_to_tuple.c` file, so can treat it like any other C extensions.
+    extensions += [
+        Extension(
+            "fasm.parser.antlr_to_tuple", [CYTHON_EXT_FILEBASE + '.c']),
+    ]
+else:
+    # Building without a `antlr_to_tuple.c` file, so need to use Cython to
+    # generate the new `antlr_to_tuple.c` file from the `antlr_to_tuple.pyx`.
+    from Cython.Build import cythonize
+    extensions += [
+        Extension(
+            "fasm.parser.antlr_to_tuple", [CYTHON_EXT_FILEBASE + '.pyx']),
+    ]
+    extensions = cythonize(extensions)
+    cmdclass['sdist'] = SdistCommand
+# ------------------------------------------------------------------------
+
+
 setuptools.setup(
+    # Package human readable information
     name="fasm",
     version=version,
     author="SymbiFlow Authors",
@@ -261,24 +308,30 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/SymbiFlow/fasm",
-    packages=setuptools.find_packages(exclude=('tests*', )),
-    install_requires=['textx'],
-    include_package_data=True,
+    license="ISC",
+    license_files=["LICENSE"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: ISC License (ISCL)",
         "Operating System :: OS Independent",
     ],
+    # Package contents control
+    packages=setuptools.find_packages(exclude=['tests*']),
+    include_package_data=True,
     entry_points={
         'console_scripts': ['fasm=fasm.tool:main'],
     },
-    ext_modules=[
-        CMakeExtension('parse_fasm', sourcedir='src', prefix='fasm/parser')
-    ] + cythonize("fasm/parser/antlr_to_tuple.pyx"),
-    cmdclass={
-        'build_ext': AntlrCMakeBuild,
-        'build': BuildCommand,
-        'develop': DevelopCommand,
-        'install': InstallCommand,
-    },
+    # Requirements
+    python_requires=">=3.6",
+    setup_requires=[  # WARNING: Must be kept in sync with pyproject.toml
+        "cython",
+        "setuptools>=42",
+        "wheel",
+    ],
+    install_requires=[
+        'textx',
+    ],
+    # C extension building
+    ext_modules=extensions,
+    cmdclass=cmdclass,
 )

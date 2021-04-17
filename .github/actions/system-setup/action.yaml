@@ -1,0 +1,93 @@
+# Copyright (C) 2021  The SymbiFlow Authors.
+#
+# Use of this source code is governed by a ISC-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/ISC
+#
+# SPDX-License-Identifier: ISC
+
+name: "Setup system for package"
+description: "Set up system with Python environment and dependencies ready for the package."
+inputs:
+  python-version:
+    description: 'Python version to use.'
+    required: true
+    default: 3.x
+  os:
+    description: 'Operating system in use.'
+    required: true
+    default: ubuntu-latest
+  system-dependencies:
+    description: 'Install the system dependencies on the operating system.'
+    required: true
+    default: true
+  packaging-tools:
+    description: 'Install the tools required for packaging.'
+    required: false
+    default: false
+  git-checkout:
+    description: 'Download the repository from git.'
+    required: true
+    default: true
+  development-tools:
+    description: 'Install the tools required for development.'
+    required: true
+    default: false
+
+runs:
+  using: "includes"
+
+  steps:
+  - name: 🐍 Set up Python ${{ matrix.python-version }}
+    uses: actions/setup-python@v2
+    with:
+      python-version: ${{ inputs.python-version }}
+
+  - name: Install latest pip
+    run: |
+      pip install -U pip
+
+  - name: Install package's system dependencies (Ubuntu)
+    if: inputs.system-dependencies && startsWith(inputs.os, 'ubuntu')
+    run: |
+      sudo apt-get update
+      sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+
+  - name: Install package's system dependencies (Mac OS X)
+    if: inputs.system-dependencies && startsWith(inputs.os, 'macos')
+    run: |
+      true
+
+  - name: Install package's system dependencies (Windows)
+    if: inputs.system-dependencies && startsWith(inputs.os, 'windows')
+    run: |
+      true
+
+  - name: Install packaging tooling
+    if: inputs.packaging-tools
+    run: |
+      pip install twine auditwheel build
+
+  - includes: /checkout
+    if: inputs.git-checkout
+
+  - name: Install developer tooling's system dependencies (Ubuntu)
+    if: inputs.development-tools && startsWith(inputs.os, 'ubuntu')
+    run: |
+      sudo apt-get update
+      sudo apt-get install -y clang-format
+
+  - name: Install developer tooling's system dependencies (Mac OS X)
+    if: inputs.development-tools && startsWith(inputs.os, 'macos')
+    run: |
+      true
+
+  - name: Install developer tooling's system dependencies (Windows)
+    if: inputs.development-tools && startsWith(inputs.os, 'windows')
+    run: |
+      true
+
+  - name: Install development tools
+    if: inputs.development-tools
+    run: |
+      pip install -r requirements.txt

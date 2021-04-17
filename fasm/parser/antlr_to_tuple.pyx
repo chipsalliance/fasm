@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# cython: language_level=3
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020  The SymbiFlow Authors.

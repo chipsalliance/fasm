@@ -1,0 +1,63 @@
+# Copyright (C) 2021  The SymbiFlow Authors.
+#
+# Use of this source code is governed by a ISC-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/ISC
+#
+# SPDX-License-Identifier: ISC
+
+# !! WARNING !!
+# Do not modify this file directly!
+# !! WARNING !!
+#
+# It is generated from: ../workflows-src/check-style.yml
+# using the script from https://github.com/mithro/actions-includes@main
+
+on:
+  push:
+  pull_request:
+name: Style
+jobs:
+  Style:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: mithro/actions-includes@main
+      if: runner.os == 'Linux'
+      continue-on-error: false
+      with:
+        workflow: .github/workflows/check-style.yml
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    - name: Install latest pip
+      run: |
+        pip install -U pip
+    - name: Install package's system dependencies (Ubuntu)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake default-jre-headless uuid-dev libantlr4-runtime-dev
+    - name: 🧰 Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        submodules: true
+    - name: Install developer tooling's system dependencies (Ubuntu)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format
+    - name: Install development tools
+      run: |
+        pip install -r requirements.txt
+    - name: Check license headers
+      run: make check-license
+    - name: Python style check
+      run: |
+        make format lint
+        test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }
+    - name: Python script checks
+      run: make check-python-scripts
+    - name: C++ style check
+      run: |-
+        make format-cpp
+        test $(git status --porcelain | wc -l) -eq 0 || { git diff; false; }

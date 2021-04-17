@@ -1,9 +1,15 @@
-check-manifest
+# Get fasm tooling requirements
+-e .
+# WARNING: Must be kept in sync with pyproject.toml
 cython
+setuptools>=42
+wheel
+# Testing
+check-manifest
 flake8
 pytest
-textx
 tox
 twine
-wheel
 yapf==0.24.0
+# CI expansion
+git+https://github.com/mithro/actions-includes.git#egg=actions-includes

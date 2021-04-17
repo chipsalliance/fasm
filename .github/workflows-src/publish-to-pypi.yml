@@ -1,0 +1,67 @@
+# Copyright (C) 2017-2021  The SymbiFlow Authors.
+#
+# Use of this source code is governed by a ISC-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/ISC
+#
+# SPDX-License-Identifier: ISC
+
+name: PyPI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+
+jobs:
+
+  Source:
+    name: Source
+    runs-on: ubuntu-20.04
+
+    steps:
+    - includes: /checkout
+
+    - includes: mithro/actions/includes/python/publish-to-pypi-src@main
+      with:
+        root_user: SymbiFlow
+
+  Wheels-Linux:
+    strategy:
+      matrix:
+        python-version: [ '3.6', '3.7', '3.8', '3.9' ]
+      fail-fast: false
+
+    name: '${{ matrix.python-version }} • manylinux'
+    runs-on: ubuntu-20.04
+
+    steps:
+    - includes: /checkout
+
+    - includes: mithro/actions/includes/python/publish-to-pypi-wheels-bin-linux@main
+      with:
+        pre-build-command: bash .github/workflows/manylinux-install-cmake.sh
+        build-requirements: cython
+        system-packages: java-1.8.0-openjdk uuid uuid-devel libuuid libuuid-devel git
+        python-version: ${{ matrix.python-version }}
+        package-path: ''
+        root_user: SymbiFlow
+
+  Wheels-Other:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+        python-version: [ '3.6', '3.7', '3.8', '3.9' ]
+      fail-fast: false
+
+    name: '${{ matrix.python-version }} • ${{ matrix.os }}'
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - includes: /checkout
+
+    - includes: mithro/actions/includes/python/publish-to-pypi-wheels-bin-other@main
+      with:
+        python-version: ${{ matrix.python-version }}
+        root_user: SymbiFlow

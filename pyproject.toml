@@ -1,2 +1,9 @@
 [build-system]
-requires = ["setuptools", "wheel", "cython"]
+# WARNING: This needs to be kept in sync with the setup_requires in setup.py
+# WARNING: This needs to be kept in sync with requirements.txt
+requires = [
+    "cython",
+    "setuptools>=42",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
