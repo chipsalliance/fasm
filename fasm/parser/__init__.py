@@ -9,8 +9,6 @@
 #
 # SPDX-License-Identifier: ISC
 
-from warnings import warn
-
 available = []
 """ List of parser submodules available. Strings should match module names. """
 
@@ -19,8 +17,8 @@ try:
         parse_fasm_filename, parse_fasm_string, implementation
     available.append('antlr')
 except ImportError as e:
-    warn(
-        """Unable to import fast Antlr4 parser implementation.
+    print(
+        """Warning: Unable to import fast Antlr4 parser implementation.
   ImportError: {}
 
   Falling back to the much slower pure Python textX based parser
@@ -30,7 +28,7 @@ except ImportError as e:
   required dependencies and then reinstalling the fasm package with:
     pip uninstall
     pip install -v fasm
-""".format(e), RuntimeWarning)
+""".format(e))
     from fasm.parser.textx import \
         parse_fasm_filename, parse_fasm_string, implementation
 
