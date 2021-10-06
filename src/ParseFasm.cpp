@@ -210,7 +210,7 @@ class FasmParserBaseVisitor : public FasmParserVisitor {
         virtual Any visitFasmFile(
             FasmParser::FasmFileContext* context) override {
                 for (auto& line : context->fasmLine()) {
-                        std::string str = visit(line);
+                        std::string str = visit(line).as<std::string>();
                         if (!str.empty()) {
                                 out << str;
                                 if (hex_mode)
