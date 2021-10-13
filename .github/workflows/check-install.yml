@@ -40,13 +40,13 @@ jobs:
 
     - name: Install pip+wheel
       run: |
-        pip install --user --upgrade wheel
-        pip install --user --upgrade pip
+        python -m pip install --user --upgrade wheel
+        python -m pip install --user --upgrade pip
 
     - name: Test installation
       shell: bash
       run: |
-        pip install git+https://github.com/${GITHUB_REPOSITORY}.git@${GITHUB_SHA}#egg=fasm
+        python -m pip install git+https://github.com/${GITHUB_REPOSITORY}.git@${GITHUB_SHA}#egg=fasm
 
     - name: Run Smoke Test
       run: |

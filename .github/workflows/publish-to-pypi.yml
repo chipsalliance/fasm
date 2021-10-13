@@ -31,8 +31,8 @@ jobs:
 
     - name: Install build dependencies
       run: |
-        pip install -U pip
-        pip install -r requirements.txt
+        python -m pip install -U pip
+        python -m pip install -r requirements.txt
         python update_version.py
 
     - name: Install package dependencies
@@ -89,8 +89,8 @@ jobs:
 
     - name: Install build dependencies
       run: |
-        pip install -U pip
-        pip install twine auditwheel
+        python -m pip install -U pip
+        python -m pip install twine auditwheel
         python update_version.py
 
     - name: 🚧 Build distribution 📦
@@ -181,8 +181,8 @@ jobs:
 
     - name: Install build dependencies
       run: |
-        pip install -U pip
-        pip install -r requirements.txt
+        python -m pip install -U pip
+        python -m pip install -r requirements.txt
         python update_version.py
 
     - name: Install package dependencies
