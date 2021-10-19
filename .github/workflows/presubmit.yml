@@ -69,4 +69,7 @@ jobs:
           python -m pip install -r requirements.txt
           python update_version.py
       - name: Tox
-        run: ANTLR4_RUNTIME_TYPE=${{ matrix.antlr_runtime_type }} tox -e ${{ matrix.TOXENV }}
+        run: |
+          export CMAKE_BUILD_PARALLEL_LEVEL=1
+          export ANTLR4_RUNTIME_TYPE=${{ matrix.antlr_runtime_type }}
+          tox -e ${{ matrix.TOXENV }}
