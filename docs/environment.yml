@@ -13,4 +13,4 @@ dependencies:
 - sphinx_rtd_theme
 # Packages installed from PyPI
 - pip:
-  - -r file:requirements.txt
+  - -r requirements.txt
