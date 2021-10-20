@@ -29,7 +29,9 @@ jobs:
     - name: Generate version
       run: python update_version.py
     - name: Build wheels
-      run: python setup.py bdist_wheel
+      run: |
+        export CMAKE_BUILD_PARALLEL_LEVEL=1
+        python setup.py bdist_wheel
     - name: Test wheel installation
       run: |
         python -m pip install dist/*.whl

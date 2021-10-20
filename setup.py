@@ -168,7 +168,8 @@ class AntlrCMakeBuild(build_ext):
             cfg = 'Debug' if self.debug else 'Release'
             build_args = ['--config', cfg]
             cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            if not sys.platform.startswith('win'):
+            if not sys.platform.startswith('win') and (
+                    os.environ.get("CMAKE_BUILD_PARALLEL_LEVEL") is None):
                 build_args += ['--', '-j']
 
             env = os.environ.copy()
