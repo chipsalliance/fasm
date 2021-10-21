@@ -1,2 +1,12 @@
 [build-system]
-requires = ["setuptools", "wheel", "cython"]
+requires = [
+  "cython",
+  "setuptools>=42",
+  "setuptools_scm[toml]>=3.4",
+  "wheel",
+]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+write_to = "fasm/version.py"
+tag_regex = "v[0-9.]+"
