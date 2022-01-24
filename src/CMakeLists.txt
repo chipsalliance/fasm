@@ -13,7 +13,8 @@ project(parse_fasm)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/antlr4/runtime/Cpp/cmake)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
+set(ANTLR4_TAG e4c1a74)
 if (MSVC_VERSION GREATER_EQUAL "1900")
     include(CheckCXXCompilerFlag)
     CHECK_CXX_COMPILER_FLAG("/std:c++latest" _cpp_latest_flag_supported)
@@ -48,7 +49,7 @@ include_directories(${ANTLR4_INCLUDE_DIRS})
 
 # set variable pointing to the antlr tool that supports C++
 # this is not required if the jar file can be found under PATH environment
-set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/antlr4_lib/antlr-4.9-complete.jar)
+set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/antlr4_lib/antlr-4.9.3-complete.jar)
 
 # add macros to generate ANTLR Cpp code from grammar
 find_package(ANTLR REQUIRED)
