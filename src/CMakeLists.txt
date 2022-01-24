@@ -14,6 +14,7 @@ project(parse_fasm)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/antlr4/runtime/Cpp/cmake)
 
 set(CMAKE_CXX_STANDARD 11)
+set(ANTLR4_TAG e4c1a74)
 if (MSVC_VERSION GREATER_EQUAL "1900")
     include(CheckCXXCompilerFlag)
     CHECK_CXX_COMPILER_FLAG("/std:c++latest" _cpp_latest_flag_supported)
