@@ -45,7 +45,7 @@ Relevant issue: https://github.com/pypa/pip/issues/5771
 ## FPGA Assembly (FASM)
 
 FPGA Assembly is a file format designed by the
-[SymbiFlow Project](https://symbiflow.github.io) developers to provide a plain
+[F4PGA Project](https://f4pa.github.io) developers to provide a plain
 text file format for configuring the internals of an FPGA.
 
 It is designed to allow FPGA place and route to not care about the *actual*
@@ -66,7 +66,7 @@ bitstream format used on an FPGA.
 ### Supported By
 
 FASM is currently supported by the
-[SymbiFlow Verilog to Routing fork](https://github.com/SymbiFlow/vtr-verilog-to-routing),
+[F4PGA Verilog to Routing fork](https://github.com/f4pga/vtr-verilog-to-routing),
 but we hope to get it merged upstream sometime soon.
 
-It is also used by [Project X-Ray](https://github.com/SymbiFlow/prjxray).
+It is also used by [Project X-Ray](https://github.com/f4pga/prjxray).

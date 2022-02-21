@@ -132,7 +132,7 @@ class AntlrCMakeBuild(build_ext):
                 "falling back on slower textX parser. Error:\n", e)
             traceback.print_exc()
 
-    # FIXME: Remove this function - https://github.com/SymbiFlow/fasm/issues/50
+    # FIXME: Remove this function - https://github.com/chipsalliance/fasm/issues/50
     def add_flags(self):
         if sys.platform.startswith('win'):
             return
@@ -264,12 +264,12 @@ class DevelopCommand(develop):
 setuptools.setup(
     name="fasm",
     version=version,
-    author="SymbiFlow Authors",
-    author_email="symbiflow@lists.librecores.org",
+    author="F4PGA Authors",
+    author_email="f4pga-wg@lists.chipsalliance.org",
     description="FPGA Assembly (FASM) Parser and Generation library",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/SymbiFlow/fasm",
+    url="https://github.com/chipsalliance/fasm",
     packages=setuptools.find_packages(exclude=('tests*', )),
     install_requires=['textx'],
     include_package_data=True,
