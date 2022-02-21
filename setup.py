@@ -132,7 +132,8 @@ class AntlrCMakeBuild(build_ext):
                 "falling back on slower textX parser. Error:\n", e)
             traceback.print_exc()
 
-    # FIXME: Remove this function - https://github.com/chipsalliance/fasm/issues/50
+    # FIXME: Remove this function
+    # see: https://github.com/chipsalliance/fasm/issues/50
     def add_flags(self):
         if sys.platform.startswith('win'):
             return
