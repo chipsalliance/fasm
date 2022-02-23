@@ -17,15 +17,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import re
+from pathlib import Path
+from re import sub as re_sub
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
-sys.path.insert(0, os.path.abspath('.'))
+from os import environ, path as os_path, popen
+#from sys import path as sys_path
+
+#sys_path.insert(0, os_path.abspath('.'))
 
 # -- General configuration ------------------------------------------------
 
@@ -57,12 +59,12 @@ source_suffix = ['.rst', '.md']
 master_doc = 'index'
 
 # General information about the project.
-project = u'FPGA Assembly (FASM)'
-copyright = u'2018-2022, F4PGA Authors'
-author = u'F4PGA'
+project = 'FPGA Assembly (FASM)'
+author = 'F4PGA Authors'
+copyright = f'{author}, 2018 - 2022'
 
 # Enable github links when not on readthedocs
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+on_rtd = environ.get('READTHEDOCS', None) == 'True'
 if not on_rtd:
     html_context = {
         "display_github": True,  # Integrate GitHub
@@ -72,7 +74,7 @@ if not on_rtd:
         "conf_py_path": "/docs/",
     }
 else:
-    docs_dir = os.path.abspath(os.path.dirname(__file__))
+    docs_dir = os_path.abspath(os_path.dirname(__file__))
     print("Docs dir is:", docs_dir)
     import subprocess
     subprocess.call('git fetch origin --unshallow', cwd=docs_dir, shell=True)
@@ -83,7 +85,7 @@ else:
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = re.sub('^v', '', os.popen('git describe').read().strip())
+release = re_sub('^v', '', popen('git describe').read().strip())
 # The short X.Y version.
 version = release
 
@@ -107,36 +109,22 @@ todo_include_todos = True
 
 # -- Options for HTML output ----------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
+html_show_sourcelink = True
+
 html_theme = 'sphinx_symbiflow_theme'
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#
 html_theme_options = {
     'repo_name': 'chipsalliance/fasm',
     'github_url': 'https://github.com/chipsalliance/fasm',
+    'globaltoc_collapse': True,
+    'color_primary': 'indigo',
+    'color_accent': 'blue',
 }
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-# Custom sidebar templates, must be a dictionary that maps document names
-# to template names.
-#
-# This is required for the alabaster theme
-# refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
-html_sidebars = {
-    '**': [
-        'relations.html',  # needs 'show_related': True theme option to display
-        'searchbox.html',
-    ]
-}
+html_logo = str(Path(html_static_path[0]) / 'logo.svg')
+html_favicon = str(Path(html_static_path[0]) / 'favicon.svg')
 
 # -- Options for HTMLHelp output ------------------------------------------
 

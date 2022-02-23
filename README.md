@@ -39,7 +39,7 @@ Or, using `pip`:
 
 The runtime will be built and statically linked by default. This flag is available in the build_ext, build, develop, and install commands.
 
-The --no-use-pep517 flag is needed because there is currently no way to pass flags with PEP517.  
+The --no-use-pep517 flag is needed because there is currently no way to pass flags with PEP517.
 Relevant issue: https://github.com/pypa/pip/issues/5771
 
 ## FPGA Assembly (FASM)
@@ -51,7 +51,7 @@ text file format for configuring the internals of an FPGA.
 It is designed to allow FPGA place and route to not care about the *actual*
 bitstream format used on an FPGA.
 
-![FASM Ecosystem Diagram](docs/fasm-diagram.png)
+![FASM Ecosystem Diagram](docs/_static/image/fasm-diagram.png)
 
 ### Properties
 
