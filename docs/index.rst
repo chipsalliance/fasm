@@ -1,1 +1,6 @@
-.. include:: specification.rst
+FPGA Assembly (FASM)
+====================
+
+.. toctree::
+
+   specification
