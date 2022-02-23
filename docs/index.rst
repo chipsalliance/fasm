@@ -2,5 +2,8 @@ FPGA Assembly (FASM)
 ====================
 
 .. toctree::
+  :caption: FPGA Assembly (FASM) Specification
 
-   specification
+  specification/introduction
+  specification/syntax
+  specification/line
