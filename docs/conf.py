@@ -83,7 +83,7 @@ if not on_rtd:
 
 html_show_sourcelink = True
 
-html_theme = 'sphinx_symbiflow_theme'
+html_theme = 'sphinx_f4pga_theme'
 
 html_theme_options = {
     'repo_name': 'chipsalliance/fasm',
