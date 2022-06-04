@@ -108,6 +108,7 @@ add_executable(parse_fasm_tests
   ${ANTLR_FasmParser_CXX_OUTPUTS})
 target_link_libraries(parse_fasm_tests ${ANTLR4_RUNTIME})
 target_link_libraries(parse_fasm_tests gtest_main)
+target_link_libraries(parse_fasm_tests gtest)
 #target_compile_options(parse_fasm_tests PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
 
 # Standalone executable
