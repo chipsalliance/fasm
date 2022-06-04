@@ -80,13 +80,15 @@ antlr_target(FasmParser antlr/FasmParser.g4 PARSER VISITOR
 # line 1: Skip lines starting in #define
 #      2: Extract TAGS(...) from dependencies
 #      3: Convert from TAGS('c', long_name) -> long_name = b'c, write to file
-add_custom_target(tags.py ALL
+add_custom_command(OUTPUT tags.py
   COMMAND grep -ve ^\#define ${CMAKE_CURRENT_SOURCE_DIR}/ParseFasm.cpp |
           grep -hoe TAG\([^\)]*\) |
-          sed -e s/TAG\(\\\(.*\\\),\ \\\(.*\\\)\)/\\2\ =\ b\\1/ > tags.py
+          sed -e s/TAG\(\\\(.*\\\),\ \\\(.*\\\)\)/\\2\ =\ b\\1/ > ${CMAKE_CURRENT_BINARY_DIR}/tags.py
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ParseFasm.cpp
   VERBATIM
   )
+add_custom_target(tags_py ALL DEPENDS tags.py)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tags.py TYPE LIB)
 
 # Include generated files in project environment
 include_directories(${ANTLR_FasmLexer_OUTPUT_DIR})
@@ -123,5 +125,3 @@ include(CTest)
 add_test(NAME parse_fasm_tests
          COMMAND parse_fasm_tests)
 enable_testing()
-
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tags.py DESTINATION .)
