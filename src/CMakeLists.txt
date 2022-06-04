@@ -97,6 +97,7 @@ add_library(parse_fasm SHARED ParseFasm.cpp
   ${ANTLR_FasmLexer_CXX_OUTPUTS}
   ${ANTLR_FasmParser_CXX_OUTPUTS})
 target_link_libraries(parse_fasm ${ANTLR4_RUNTIME})
+install(TARGETS parse_fasm)
 #target_compile_options(parse_fasm PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
 
 add_executable(parse_fasm_tests

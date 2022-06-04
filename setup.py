@@ -168,8 +168,7 @@ class AntlrCMakeBuild(build_ext):
                     os.path.dirname(self.get_ext_fullpath(ext.name))),
                 ext.prefix)
             cmake_args = [
-                '-DCMAKE_INSTALL_PREFIX=' + extdir,
-                '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
+                '-DCMAKE_INSTALL_PREFIX=' + extdir, '-DCMAKE_INSTALL_LIBDIR=.',
                 '-DPYTHON_EXECUTABLE=' + sys.executable,
                 '-DANTLR_RUNTIME_TYPE=' + shared_options.antlr_runtime
             ]
