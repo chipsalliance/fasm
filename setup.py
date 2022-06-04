@@ -121,8 +121,6 @@ class AntlrCMakeBuild(build_ext):
                             os.path.dirname(self.get_ext_fullpath(ext.name))),
                         ext.prefix)
 
-            super().run()
-
             try:
                 out = subprocess.check_output(['cmake', '--version'])
             except OSError:
@@ -136,8 +134,7 @@ class AntlrCMakeBuild(build_ext):
             if cmake_version < '3.7.0':
                 raise RuntimeError("CMake >= 3.7.0 is required.")
 
-            for ext in self.extensions:
-                self.build_extension(ext)
+            super().run()
 
         except BaseException as e:
             print(
