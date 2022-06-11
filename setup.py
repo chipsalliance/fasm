@@ -108,6 +108,19 @@ class AntlrCMakeBuild(build_ext):
     def run(self):
         shared_options.load(self)
         try:
+            # We need to compute the install directory here, because
+            # build_ext.run() unsets build_ext.inplace while running
+            # build_extension(). This means that files would be installed
+            # to the wrong location (to the temporary build directory)
+            # for `setup.py develop`/`pip install -e` builds.
+            self.install_dirs = {}
+            for ext in self.extensions:
+                if isinstance(ext, CMakeExtension):
+                    self.install_dirs[ext] = os.path.join(
+                        os.path.abspath(
+                            os.path.dirname(self.get_ext_fullpath(ext.name))),
+                        ext.prefix)
+
             super().run()
 
             try:
@@ -163,10 +176,7 @@ class AntlrCMakeBuild(build_ext):
 
     def build_extension(self, ext):
         if isinstance(ext, CMakeExtension):
-            extdir = os.path.join(
-                os.path.abspath(
-                    os.path.dirname(self.get_ext_fullpath(ext.name))),
-                ext.prefix)
+            extdir = self.install_dirs[ext]
             cmake_args = [
                 '-DCMAKE_INSTALL_PREFIX=' + extdir, '-DCMAKE_INSTALL_LIBDIR=.',
                 '-DPYTHON_EXECUTABLE=' + sys.executable,
