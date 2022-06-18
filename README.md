@@ -45,7 +45,7 @@ Relevant issue: https://github.com/pypa/pip/issues/5771
 ## FPGA Assembly (FASM)
 
 FPGA Assembly is a file format designed by the
-[F4PGA Project](https://f4pa.github.io) developers to provide a plain
+[F4PGA Project](https://f4pga.org/) developers to provide a plain
 text file format for configuring the internals of an FPGA.
 
 It is designed to allow FPGA place and route to not care about the *actual*
