@@ -57,7 +57,7 @@ include_directories(${ANTLR4_INCLUDE_DIRS})
 
 # set variable pointing to the antlr tool that supports C++
 # this is not required if the jar file can be found under PATH environment
-set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/antlr4_lib/antlr-4.9.3-complete.jar)
+set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/antlr4_lib/antlr-4.9.3-complete.jar CACHE PATH "antlr4 generator JAR file")
 
 # add macros to generate ANTLR Cpp code from grammar
 find_package(ANTLR REQUIRED)
@@ -80,13 +80,15 @@ antlr_target(FasmParser antlr/FasmParser.g4 PARSER VISITOR
 # line 1: Skip lines starting in #define
 #      2: Extract TAGS(...) from dependencies
 #      3: Convert from TAGS('c', long_name) -> long_name = b'c, write to file
-add_custom_target(tags.py ALL
+add_custom_command(OUTPUT tags.py
   COMMAND grep -ve ^\#define ${CMAKE_CURRENT_SOURCE_DIR}/ParseFasm.cpp |
           grep -hoe TAG\([^\)]*\) |
-          sed -e s/TAG\(\\\(.*\\\),\ \\\(.*\\\)\)/\\2\ =\ b\\1/ > tags.py
+          sed -e s/TAG\(\\\(.*\\\),\ \\\(.*\\\)\)/\\2\ =\ b\\1/ > ${CMAKE_CURRENT_BINARY_DIR}/tags.py
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ParseFasm.cpp
   VERBATIM
   )
+add_custom_target(tags_py ALL DEPENDS tags.py)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tags.py TYPE LIB)
 
 # Include generated files in project environment
 include_directories(${ANTLR_FasmLexer_OUTPUT_DIR})
@@ -97,6 +99,7 @@ add_library(parse_fasm SHARED ParseFasm.cpp
   ${ANTLR_FasmLexer_CXX_OUTPUTS}
   ${ANTLR_FasmParser_CXX_OUTPUTS})
 target_link_libraries(parse_fasm ${ANTLR4_RUNTIME})
+install(TARGETS parse_fasm)
 #target_compile_options(parse_fasm PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
 
 add_executable(parse_fasm_tests
@@ -105,6 +108,7 @@ add_executable(parse_fasm_tests
   ${ANTLR_FasmParser_CXX_OUTPUTS})
 target_link_libraries(parse_fasm_tests ${ANTLR4_RUNTIME})
 target_link_libraries(parse_fasm_tests gtest_main)
+target_link_libraries(parse_fasm_tests gtest)
 #target_compile_options(parse_fasm_tests PRIVATE -Wno-attributes) # Disable warning from antlr4-runtime
 
 # Standalone executable
@@ -122,5 +126,3 @@ include(CTest)
 add_test(NAME parse_fasm_tests
          COMMAND parse_fasm_tests)
 enable_testing()
-
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tags.py DESTINATION .)
